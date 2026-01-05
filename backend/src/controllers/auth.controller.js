@@ -3,7 +3,7 @@ const ResponseUtil = require("../utils/response.util");
 const { MESSAGES } = require("../utils/constants");
 
 class AuthController {
-  // Sign In with Google (Firebase Authentication)
+  // ✅ Sign In with Google - FIXED
   async signInWithGoogle(req, res) {
     try {
       const { idToken } = req.body;
@@ -14,7 +14,14 @@ class AuthController {
 
       const user = await AuthService.verifyAndCreateUser(idToken);
 
-      return ResponseUtil.success(res, user, MESSAGES.LOGIN_SUCCESS);
+      return ResponseUtil.success(
+        res,
+        {
+          user,
+          idToken,
+        },
+        MESSAGES.LOGIN_SUCCESS
+      );
     } catch (error) {
       if (
         error.message === "Token expired" ||
@@ -53,13 +60,14 @@ class AuthController {
     }
   }
 
-  // Login with Email & Password
+  // ✅ Login with Email & Password - ALREADY CORRECT
   async login(req, res) {
     try {
       const { email, password } = req.body;
 
       const result = await AuthService.loginWithEmail(email, password);
 
+      // ✅ ĐÃ TRẢ VỀ {user, idToken, refreshToken}
       return ResponseUtil.success(res, result, MESSAGES.LOGIN_SUCCESS);
     } catch (error) {
       if (error.message === MESSAGES.INVALID_CREDENTIALS) {
