@@ -11,7 +11,10 @@ const USER_STATUS = {
   INACTIVE: "inactive",
   BANNED: "banned",
 };
-
+const DESTINATION_STATUS = {
+  ACTIVE: "active",
+  INACTIVE: "inactive",
+};
 // HTTP Status codes
 const HTTP_STATUS = {
   OK: 200,
@@ -88,6 +91,7 @@ const PERMISSIONS = {
 
 module.exports = {
   ROLES,
+  DESTINATION_STATUS,
   USER_STATUS,
   HTTP_STATUS,
   MESSAGES,

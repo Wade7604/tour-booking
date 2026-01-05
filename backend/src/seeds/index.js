@@ -1,5 +1,6 @@
 require("dotenv").config();
 const { initializeFirebase } = require("../config/firebase.config");
+const { initializeElasticsearch } = require("../config/elasticsearch.config");
 
 const runSeeds = async () => {
   try {
@@ -8,9 +9,12 @@ const runSeeds = async () => {
     // Initialize Firebase FIRST
     initializeFirebase();
 
+    // Initialize Elasticsearch
+    initializeElasticsearch();
     // Import seeders AFTER Firebase is initialized
     const seedPermissions = require("./permission.seed");
     const seedRoles = require("./role.seed");
+    const seedDestinations = require("./destination.seed");
 
     // Seed permissions first
     await seedPermissions();
@@ -18,6 +22,10 @@ const runSeeds = async () => {
 
     // Then seed roles (roles depend on permissions)
     await seedRoles();
+    console.log("");
+
+    // Seed destinations
+    await seedDestinations();
     console.log("");
 
     console.log("✅ All seeds completed successfully!");

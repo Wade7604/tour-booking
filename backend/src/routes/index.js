@@ -6,11 +6,15 @@ const authRoutes = require("./auth.routes");
 const permissionRoutes = require("./permission.routes");
 const roleRoutes = require("./role.routes");
 const userRoutes = require("./user.routes");
+const destinationRoutes = require("./destination.routes");
+
 // API routes
 router.use("/auth", authRoutes);
 router.use("/permissions", permissionRoutes);
 router.use("/roles", roleRoutes);
 router.use("/users", userRoutes);
+router.use("/destinations", destinationRoutes);
+
 // Health check
 router.get("/health", (req, res) => {
   res.json({

@@ -2,16 +2,26 @@ const { getElasticsearch } = require("../config/elasticsearch.config");
 
 class ElasticsearchService {
   constructor() {
-    this.indexName = "users";
+    this.client = null;
   }
+
+  // Get client instance
+  getClient() {
+    if (!this.client) {
+      this.client = getElasticsearch();
+    }
+    return this.client;
+  }
+
+  // ==================== USER METHODS ====================
 
   // Index a user document
   async indexUser(user) {
     try {
-      const client = getElasticsearch();
+      const client = this.getClient();
 
       await client.index({
-        index: this.indexName,
+        index: "users",
         id: user.id,
         document: {
           id: user.id,
@@ -25,7 +35,7 @@ class ElasticsearchService {
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
         },
-        refresh: true, // Make document immediately searchable
+        refresh: true,
       });
 
       console.log(`✅ Indexed user: ${user.id}`);
@@ -38,10 +48,10 @@ class ElasticsearchService {
   // Update a user document
   async updateUser(userId, updateData) {
     try {
-      const client = getElasticsearch();
+      const client = this.getClient();
 
       await client.update({
-        index: this.indexName,
+        index: "users",
         id: userId,
         doc: {
           ...updateData,
@@ -60,10 +70,10 @@ class ElasticsearchService {
   // Delete a user document
   async deleteUser(userId) {
     try {
-      const client = getElasticsearch();
+      const client = this.getClient();
 
       await client.delete({
-        index: this.indexName,
+        index: "users",
         id: userId,
         refresh: true,
       });
@@ -82,14 +92,12 @@ class ElasticsearchService {
   // Search users
   async searchUsers(searchTerm, page = 1, limit = 20, filters = {}) {
     try {
-      const client = getElasticsearch();
+      const client = this.getClient();
       const from = (page - 1) * limit;
 
-      // Build query
       const mustQueries = [];
       const shouldQueries = [];
 
-      // Search term
       if (searchTerm && searchTerm.trim()) {
         shouldQueries.push(
           { match: { fullName: { query: searchTerm, boost: 2 } } },
@@ -99,7 +107,6 @@ class ElasticsearchService {
         );
       }
 
-      // Filters
       if (filters.role) {
         mustQueries.push({ term: { role: filters.role } });
       }
@@ -110,7 +117,6 @@ class ElasticsearchService {
         mustQueries.push({ term: { provider: filters.provider } });
       }
 
-      // Build final query
       const query = {
         bool: {
           must: mustQueries.length > 0 ? mustQueries : [{ match_all: {} }],
@@ -120,7 +126,7 @@ class ElasticsearchService {
       };
 
       const response = await client.search({
-        index: this.indexName,
+        index: "users",
         from,
         size: limit,
         query,
@@ -141,83 +147,13 @@ class ElasticsearchService {
     }
   }
 
-  // Bulk index users (for initial sync)
-  async bulkIndexUsers(users) {
-    try {
-      const client = getElasticsearch();
-
-      const operations = users.flatMap((user) => [
-        { index: { _index: this.indexName, _id: user.id } },
-        {
-          id: user.id,
-          email: user.email,
-          fullName: user.fullName,
-          phone: user.phone,
-          role: user.role,
-          status: user.status,
-          provider: user.provider,
-          avatar: user.avatar,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        },
-      ]);
-
-      const response = await client.bulk({
-        refresh: true,
-        operations,
-      });
-
-      if (response.errors) {
-        const erroredDocuments = [];
-        response.items.forEach((action, i) => {
-          const operation = Object.keys(action)[0];
-          if (action[operation].error) {
-            erroredDocuments.push({
-              status: action[operation].status,
-              error: action[operation].error,
-              operation: operations[i * 2],
-              document: operations[i * 2 + 1],
-            });
-          }
-        });
-        console.error("❌ Bulk indexing errors:", erroredDocuments);
-      }
-
-      console.log(`✅ Bulk indexed ${users.length} users`);
-      return response;
-    } catch (error) {
-      console.error("❌ Error bulk indexing users:", error);
-      throw error;
-    }
-  }
-
-  // Get user by ID
-  async getUserById(userId) {
-    try {
-      const client = getElasticsearch();
-
-      const response = await client.get({
-        index: this.indexName,
-        id: userId,
-      });
-
-      return response._source;
-    } catch (error) {
-      if (error.meta?.statusCode === 404) {
-        return null;
-      }
-      console.error("❌ Error getting user:", error);
-      throw error;
-    }
-  }
-
-  // Get aggregations
+  // Get user aggregations
   async getUserAggregations() {
     try {
-      const client = getElasticsearch();
+      const client = this.getClient();
 
       const response = await client.search({
-        index: this.indexName,
+        index: "users",
         size: 0,
         aggs: {
           by_role: {
@@ -255,6 +191,190 @@ class ElasticsearchService {
       };
     } catch (error) {
       console.error("❌ Error getting aggregations:", error);
+      throw error;
+    }
+  }
+
+  // ==================== DESTINATION METHODS ====================
+
+  // Index a destination to Elasticsearch
+  async indexDestination(destination) {
+    try {
+      const client = this.getClient();
+
+      await client.index({
+        index: "destinations",
+        id: destination.id,
+        document: {
+          id: destination.id,
+          name: destination.name,
+          slug: destination.slug,
+          description: destination.description,
+          country: destination.country,
+          city: destination.city,
+          images: destination.images || [],
+          status: destination.status,
+          createdAt: destination.createdAt,
+          updatedAt: destination.updatedAt,
+        },
+        refresh: true,
+      });
+
+      console.log(`✅ Indexed destination: ${destination.id}`);
+    } catch (error) {
+      console.error("❌ Failed to index destination:", error);
+      throw error;
+    }
+  }
+
+  // Update a destination in Elasticsearch
+  async updateDestination(destId, updateData) {
+    try {
+      const client = this.getClient();
+
+      await client.update({
+        index: "destinations",
+        id: destId,
+        doc: {
+          ...updateData,
+          updatedAt: new Date().toISOString(),
+        },
+        refresh: true,
+      });
+
+      console.log(`✅ Updated destination in ES: ${destId}`);
+    } catch (error) {
+      console.error("❌ Failed to update destination:", error);
+      throw error;
+    }
+  }
+
+  // Delete a destination from Elasticsearch
+  async deleteDestination(destId) {
+    try {
+      const client = this.getClient();
+
+      await client.delete({
+        index: "destinations",
+        id: destId,
+        refresh: true,
+      });
+
+      console.log(`✅ Deleted destination from ES: ${destId}`);
+    } catch (error) {
+      if (error.meta?.statusCode === 404) {
+        console.log(`⏭️  Destination not found in ES: ${destId}`);
+        return;
+      }
+      console.error("❌ Failed to delete destination:", error);
+      throw error;
+    }
+  }
+
+  // Search destinations in Elasticsearch
+  async searchDestinations(searchTerm, page = 1, limit = 10, filters = {}) {
+    try {
+      const client = this.getClient();
+      const must = [];
+
+      if (searchTerm && searchTerm.trim()) {
+        must.push({
+          multi_match: {
+            query: searchTerm,
+            fields: ["name^3", "city^2", "country^2", "description"],
+            fuzziness: "AUTO",
+          },
+        });
+      }
+
+      if (filters.status) {
+        must.push({ term: { status: filters.status } });
+      }
+      if (filters.country) {
+        must.push({ term: { "country.keyword": filters.country } });
+      }
+      if (filters.city) {
+        must.push({ term: { "city.keyword": filters.city } });
+      }
+
+      const from = (page - 1) * limit;
+
+      const result = await client.search({
+        index: "destinations",
+        from,
+        size: limit,
+        query: {
+          bool: {
+            must: must.length > 0 ? must : [{ match_all: {} }],
+          },
+        },
+        sort: [{ createdAt: { order: "desc" } }],
+      });
+
+      const destinations = result.hits.hits.map((hit) => hit._source);
+      const total = result.hits.total.value;
+
+      return { destinations, total };
+    } catch (error) {
+      console.error("❌ Elasticsearch search failed:", error);
+      throw error;
+    }
+  }
+
+  // Get destination aggregations (statistics)
+  async getDestinationAggregations() {
+    try {
+      const client = this.getClient();
+
+      const result = await client.search({
+        index: "destinations",
+        size: 0,
+        aggs: {
+          total: {
+            value_count: {
+              field: "id.keyword",
+            },
+          },
+          by_status: {
+            terms: {
+              field: "status.keyword",
+              size: 10,
+            },
+          },
+          by_country: {
+            terms: {
+              field: "country.keyword",
+              size: 20,
+            },
+          },
+          by_city: {
+            terms: {
+              field: "city.keyword",
+              size: 50,
+            },
+          },
+        },
+      });
+
+      const aggs = result.aggregations;
+
+      return {
+        total: aggs.total.value,
+        byStatus: aggs.by_status.buckets.reduce((acc, bucket) => {
+          acc[bucket.key] = bucket.doc_count;
+          return acc;
+        }, {}),
+        byCountry: aggs.by_country.buckets.reduce((acc, bucket) => {
+          acc[bucket.key] = bucket.doc_count;
+          return acc;
+        }, {}),
+        byCity: aggs.by_city.buckets.reduce((acc, bucket) => {
+          acc[bucket.key] = bucket.doc_count;
+          return acc;
+        }, {}),
+      };
+    } catch (error) {
+      console.error("❌ Failed to get destination aggregations:", error);
       throw error;
     }
   }
