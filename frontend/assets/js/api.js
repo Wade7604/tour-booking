@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.API_BASE_URL;
+const API_BASE_URL = "http://localhost:5000/api";
 
 class API {
   // Helper method to make requests
