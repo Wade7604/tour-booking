@@ -7,6 +7,7 @@ const permissionRoutes = require("./permission.routes");
 const roleRoutes = require("./role.routes");
 const userRoutes = require("./user.routes");
 const destinationRoutes = require("./destination.routes");
+const tourRoutes = require("./tour.routes");
 const uploadRoutes = require("./upload.routes");
 
 // API routes
@@ -15,6 +16,7 @@ router.use("/permissions", permissionRoutes);
 router.use("/roles", roleRoutes);
 router.use("/users", userRoutes);
 router.use("/destinations", destinationRoutes);
+router.use("/tours", tourRoutes);
 router.use("/uploads", uploadRoutes);
 // Health check
 router.get("/health", (req, res) => {

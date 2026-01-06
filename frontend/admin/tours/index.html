@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tour Management - Admin</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/css/admin.css" />
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+        <h4 class="mb-0"><i class="bi bi-gear-fill"></i> <span class="sidebar-text">Admin Panel</span></h4>
+        <button class="btn btn-sm btn-outline-primary" onclick="toggleSidebar()">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
+      <nav class="nav flex-column">
+        <a class="nav-link" href="/admin/index.html">
+          <i class="bi bi-speedometer2"></i> <span class="sidebar-text">Dashboard</span>
+        </a>
+        <a class="nav-link" href="/admin/users/index.html" data-permission="user:view">
+          <i class="bi bi-people-fill"></i> <span class="sidebar-text">Users</span>
+        </a>
+        <a class="nav-link" href="/admin/roles/index.html" data-permission="role:view">
+          <i class="bi bi-shield-fill"></i> <span class="sidebar-text">Roles</span>
+        </a>
+        <a class="nav-link" href="/admin/permissions/index.html" data-permission="permission:view">
+          <i class="bi bi-key-fill"></i> <span class="sidebar-text">Permissions</span>
+        </a>
+        <a class="nav-link" href="/admin/destinations/index.html" data-permission="destination:view">
+          <i class="bi bi-geo-alt-fill"></i> <span class="sidebar-text">Destinations</span>
+        </a>
+        <a class="nav-link active" href="/admin/tours/index.html" data-permission="tour:view">
+          <i class="bi bi-map-fill"></i> <span class="sidebar-text">Tours</span>
+        </a>
+        <hr />
+        <a class="nav-link" href="/index.html">
+          <i class="bi bi-house-fill"></i> <span class="sidebar-text">Back to Home</span>
+        </a>
+        <a class="nav-link" href="#" onclick="AdminUtils.logout()">
+          <i class="bi bi-box-arrow-right"></i> <span class="sidebar-text">Logout</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+      <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-map-fill"></i> Tour Management</h2>
+          <div>
+            <button class="btn btn-primary" data-permission="tour:create" onclick="openCreateModal()">
+              <i class="bi bi-plus-circle"></i> Create New Tour
+            </button>
+          </div>
+        </div>
+
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+          <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+              <div class="stat-icon text-primary">
+                <i class="bi bi-map-fill"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value" id="totalTours">0</div>
+                <div class="stat-label">Total Tours</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+              <div class="stat-icon text-success">
+                <i class="bi bi-check-circle-fill"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value" id="activeTours">0</div>
+                <div class="stat-label">Active Tours</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+              <div class="stat-icon text-warning">
+                <i class="bi bi-star-fill"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value" id="featuredTours">0</div>
+                <div class="stat-label">Featured</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+              <div class="stat-icon text-info">
+                <i class="bi bi-file-earmark-text"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value" id="draftTours">0</div>
+                <div class="stat-label">Drafts</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-section">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label"><i class="bi bi-search"></i> Search</label>
+              <input type="text" class="form-control" id="searchInput" placeholder="Search tours...">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label"><i class="bi bi-funnel"></i> Status</label>
+              <select class="form-select" id="statusFilter">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="draft">Draft</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label"><i class="bi bi-activity"></i> Difficulty</label>
+              <select class="form-select" id="difficultyFilter">
+                <option value="">All Difficulty</option>
+                <option value="easy">Easy</option>
+                <option value="moderate">Moderate</option>
+                <option value="challenging">Challenging</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label"><i class="bi bi-tag"></i> Type</label>
+              <select class="form-select" id="typeFilter">
+                <option value="">All Types</option>
+                <option value="adventure">Adventure</option>
+                <option value="cultural">Cultural</option>
+                <option value="beach">Beach</option>
+                <option value="city">City</option>
+                <option value="nature">Nature</option>
+                <option value="food">Food</option>
+                <option value="cruise">Cruise</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">&nbsp;</label>
+              <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+                <i class="bi bi-arrow-clockwise"></i> Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tours Table -->
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-list-ul"></i> Tours List</span>
+            <span class="badge bg-primary" id="tourCount">0 tours</span>
+          </div>
+          <div class="card-body">
+            <div id="loadingSpinner" class="text-center py-5" style="display: none;">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+            <div class="table-container">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Tour</th>
+                    <th>Duration</th>
+                    <th>Price</th>
+                    <th>Difficulty</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="toursTableBody">
+                  <!-- Tours will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-4">
+              <div class="text-muted">
+                Showing <span id="showingFrom">0</span> to <span id="showingTo">0</span> of <span id="totalResults">0</span> results
+              </div>
+              <nav aria-label="Page navigation">
+                <ul id="paginationContainer" class="pagination mb-0"></ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create/Edit Tour Modal -->
+    <div class="modal fade" id="tourModal" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="tourModalTitle">Create New Tour</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="tourForm">
+              <input type="hidden" id="tourId">
+              
+              <!-- Tabs Navigation -->
+              <ul class="nav nav-tabs mb-3" id="tourFormTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button">
+                    <i class="bi bi-info-circle"></i> Basic Info
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="pricing-tab" data-bs-toggle="tab" data-bs-target="#pricing" type="button">
+                    <i class="bi bi-cash"></i> Duration & Pricing
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button">
+                    <i class="bi bi-gear"></i> Tour Details
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="itinerary-tab" data-bs-toggle="tab" data-bs-target="#itinerary" type="button">
+                    <i class="bi bi-calendar-check"></i> Itinerary
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="images-tab" data-bs-toggle="tab" data-bs-target="#images" type="button">
+                    <i class="bi bi-images"></i> Images
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="dates-tab" data-bs-toggle="tab" data-bs-target="#dates" type="button">
+                    <i class="bi bi-calendar-event"></i> Available Dates
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="extras-tab" data-bs-toggle="tab" data-bs-target="#extras" type="button">
+                    <i class="bi bi-list-check"></i> Includes/Excludes
+                  </button>
+                </li>
+              </ul>
+
+              <!-- Tab Content -->
+              <div class="tab-content" id="tourFormTabContent">
+                
+                <!-- Basic Info Tab -->
+                <div class="tab-pane fade show active" id="basic" role="tabpanel">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label">Tour Name *</label>
+                      <input type="text" class="form-control" id="tourName" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Slug</label>
+                      <input type="text" class="form-control" id="tourSlug" readonly>
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">Description *</label>
+                      <textarea class="form-control" id="tourDescription" rows="3" required></textarea>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Main Destination</label>
+                      <select class="form-select" id="tourDestination">
+                        <option value="">Select destination (optional)</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Status *</label>
+                      <select class="form-select" id="tourStatus" required>
+                        <option value="draft">Draft</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
+                    <div class="col-12">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="tourFeatured">
+                        <label class="form-check-label" for="tourFeatured">
+                          <i class="bi bi-star"></i> Featured Tour
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Duration & Pricing Tab -->
+                <div class="tab-pane fade" id="pricing" role="tabpanel">
+                  <div class="row g-3">
+                    <div class="col-md-3">
+                      <label class="form-label">Days *</label>
+                      <input type="number" class="form-control" id="tourDays" min="1" required>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Nights *</label>
+                      <input type="number" class="form-control" id="tourNights" min="0" required>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Adult Price (VND) *</label>
+                      <input type="number" class="form-control" id="priceAdult" min="0" required>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Child Price (VND)</label>
+                      <input type="number" class="form-control" id="priceChild" min="0">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tour Details Tab -->
+                <div class="tab-pane fade" id="details" role="tabpanel">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label class="form-label">Max Group Size *</label>
+                      <input type="number" class="form-control" id="maxGroupSize" min="1" required>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Min Group Size</label>
+                      <input type="number" class="form-control" id="minGroupSize" min="1" value="1">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Difficulty *</label>
+                      <select class="form-select" id="tourDifficulty" required>
+                        <option value="easy">Easy</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="challenging">Challenging</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Tour Type *</label>
+                      <select class="form-select" id="tourType" required>
+                        <option value="adventure">Adventure</option>
+                        <option value="cultural">Cultural</option>
+                        <option value="beach">Beach</option>
+                        <option value="city">City</option>
+                        <option value="nature">Nature</option>
+                        <option value="food">Food</option>
+                        <option value="cruise">Cruise</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Itinerary Tab -->
+                <div class="tab-pane fade" id="itinerary" role="tabpanel">
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <label class="form-label">Tour Itinerary (Day-by-Day Schedule)</label>
+                      <textarea class="form-control" id="tourItinerary" rows="10" placeholder="Example format:
+Day 1: Arrival in Hanoi
+- Pick up from airport
+- Check-in hotel
+- Welcome dinner
+
+Day 2: Hanoi City Tour
+- Visit Ho Chi Minh Mausoleum
+- Explore Old Quarter
+- Lunch at local restaurant"></textarea>
+                      <small class="text-muted">Describe the tour schedule day by day. Use clear formatting for better readability.</small>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Images Tab -->
+                <div class="tab-pane fade" id="images" role="tabpanel">
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <label class="form-label">Tour Images</label>
+                      <div class="border rounded p-3 bg-light">
+                        <input type="file" id="tourImageInput" class="form-control mb-3" accept="image/*" multiple>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="uploadTourImages()">
+                          <i class="bi bi-upload"></i> Upload Images
+                        </button>
+                        <div id="tourImagesPreview" class="row g-2 mt-3"></div>
+                      </div>
+                      <small class="text-muted">Upload multiple images for your tour. First image will be the cover image.</small>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Available Dates Tab -->
+                <div class="tab-pane fade" id="dates" role="tabpanel">
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <label class="form-label">Manage Available Dates</label>
+                      <div class="border rounded p-3 bg-light">
+                        <div class="row g-2 mb-3 align-items-end">
+                          <div class="col-sm-5">
+                            <label class="form-label small">Date</label>
+                            <input type="date" id="newTourDate" class="form-control">
+                          </div>
+                          <div class="col-sm-4">
+                            <label class="form-label small">Slots</label>
+                            <input type="number" id="newTourSlots" class="form-control" placeholder="Seats" min="1" value="20">
+                          </div>
+                          <div class="col-sm-3">
+                            <button type="button" class="btn btn-success w-100" onclick="addTourDate()">
+                              <i class="bi bi-plus-circle"></i> Add
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                          <table class="table table-sm table-hover bg-white mb-0" id="tourDatesTable">
+                            <thead class="table-light sticky-top">
+                              <tr>
+                                <th>Date</th>
+                                <th>Slots</th>
+                                <th class="text-end">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody id="tourDatesList">
+                              <!-- Dates will be added here -->
+                              <tr>
+                                <td colspan="3" class="text-center text-muted small py-3">No dates added yet</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Includes/Excludes Tab -->
+                <div class="tab-pane fade" id="extras" role="tabpanel">
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <label class="form-label">What's Included</label>
+                      <textarea class="form-control" id="tourIncludes" rows="3" placeholder="Enter each item on a new line"></textarea>
+                      <small class="text-muted">One item per line</small>
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">What's Excluded</label>
+                      <textarea class="form-control" id="tourExcludes" rows="3" placeholder="Enter each item on a new line"></textarea>
+                      <small class="text-muted">One item per line</small>
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">Requirements</label>
+                      <textarea class="form-control" id="tourRequirements" rows="3" placeholder="Enter each requirement on a new line"></textarea>
+                      <small class="text-muted">One item per line</small>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveTour()">
+              <i class="bi bi-save"></i> Save Tour
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/admin-utils.js"></script>
+    <script src="/assets/js/sidebar-toggle.js"></script>
+    <script src="/assets/js/tour.js"></script>
+    <script src="/assets/js/auth-middleware.js"></script>
+
+    <script>
+      let currentPage = 1;
+      let currentFilters = {};
+      let tourModal, currentTourId = null;
+
+      // Initialize
+      async function init() {
+        const user = await AuthMiddleware.getCurrentUser();
+        if (!user) {
+          window.location.href = '/login';
+          return;
+        }
+
+        await AuthMiddleware.setupPermissionUI();
+        tourModal = new bootstrap.Modal(document.getElementById('tourModal'));
+        
+        loadDestinations();
+        loadStatistics();
+        loadTours();
+        setupEventListeners();
+      }
+
+      // Load destinations for dropdown
+      async function loadDestinations() {
+        try {
+          const response = await API.get('/destinations?limit=100&status=active');
+          const result = response.data || response;
+          // result is already the array of destinations
+          const destinations = Array.isArray(result) ? result : (result.destinations || []);
+          
+          const select = document.getElementById('tourDestination');
+          select.innerHTML = '<option value="">Select destination (optional)</option>';
+          
+          console.log('Loaded destinations:', destinations.length);
+          
+          destinations.forEach(dest => {
+            const option = document.createElement('option');
+            option.value = dest.id;
+            option.textContent = `${dest.name} (${dest.city}, ${dest.country})`;
+            select.appendChild(option);
+          });
+        } catch (error) {
+          console.error('Error loading destinations:', error);
+        }
+      }
+
+      // Setup event listeners
+      function setupEventListeners() {
+        // Search with debounce
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', AdminUtils.debounce(() => {
+          currentPage = 1;
+          loadTours();
+        }, 500));
+
+        // Filters
+        ['statusFilter', 'difficultyFilter', 'typeFilter'].forEach(id => {
+          document.getElementById(id).addEventListener('change', () => {
+            currentPage = 1;
+            loadTours();
+          });
+        });
+
+        // Auto-generate slug
+        document.getElementById('tourName').addEventListener('input', (e) => {
+          document.getElementById('tourSlug').value = tourAPI.generateSlug(e.target.value);
+        });
+      }
+
+      // Load statistics
+      async function loadStatistics() {
+        try {
+          const response = await tourAPI.getStatistics();
+          const stats = response.data || response;
+          AdminUtils.animateCounter(document.getElementById('totalTours'), stats.total || 0);
+          AdminUtils.animateCounter(document.getElementById('activeTours'), stats.active || 0);
+          AdminUtils.animateCounter(document.getElementById('featuredTours'), stats.featured || 0);
+          AdminUtils.animateCounter(document.getElementById('draftTours'), stats.draft || 0);
+        } catch (error) {
+          console.error('Error loading statistics:', error);
+        }
+      }
+
+      // Load tours
+      async function loadTours() {
+        AdminUtils.showLoading('loadingSpinner');
+        document.getElementById('toursTableBody').innerHTML = ''; // Clear table during load
+        try {
+          const params = {
+            page: currentPage,
+            limit: 10,
+            status: document.getElementById('statusFilter').value,
+            difficulty: document.getElementById('difficultyFilter').value,
+            tourType: document.getElementById('typeFilter').value,
+          };
+
+          const searchTerm = document.getElementById('searchInput').value.trim();
+          let response;
+
+          if (searchTerm) {
+            response = await tourAPI.search(searchTerm, params);
+          } else {
+            response = await tourAPI.getAll(params);
+          }
+
+          // Access data from response
+          const result = response.data || response;
+          displayTours(result.tours || []);
+          
+          // Debug pagination
+          console.log('Pagination data:', result.pagination);
+          
+          const pagination = result.pagination || {page: 1, limit: 10, total: 0, totalPages: 0};
+          displayPagination(pagination);
+          
+          // Update Showing Text
+          const total = pagination.total;
+          const page = pagination.page;
+          const limit = pagination.limit;
+          const from = total === 0 ? 0 : (page - 1) * limit + 1;
+          const to = Math.min(page * limit, total);
+
+          const fromEl = document.getElementById('showingFrom');
+          if(fromEl) fromEl.textContent = from;
+          
+          const toEl = document.getElementById('showingTo');
+          if(toEl) toEl.textContent = to;
+          
+          const totalEl = document.getElementById('totalResults');
+          if(totalEl) totalEl.textContent = total;
+
+          // Update header count if exists
+          const countEl = document.getElementById('resultCount'); 
+          if(countEl) countEl.textContent = `${total} results`;
+
+        } catch (error) {
+          console.error('Error loading tours:', error);
+          AdminUtils.showToast('Failed to load tours', 'danger');
+        } finally {
+          AdminUtils.hideLoading('loadingSpinner');
+        }
+      }
+
+      // Display tours
+      function displayTours(tours) {
+        const tbody = document.getElementById('toursTableBody');
+        if (!tours || tours.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center">No tours found</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = tours.map(tour => `
+          <tr>
+            <td>
+              <strong>${AdminUtils.escapeHtml(tour.name)}</strong><br>
+              <small class="text-muted">${tourAPI.formatDuration(tour.duration)}</small>
+            </td>
+            <td>${tour.duration.days}D/${tour.duration.nights}N</td>
+            <td>${tourAPI.formatPrice(tour.price.adult)}</td>
+            <td>
+              <span class="badge bg-${getDifficultyColor(tour.difficulty)}">
+                ${tour.difficulty}
+              </span>
+            </td>
+            <td>
+              <span class="badge bg-secondary">${tour.tourType}</span>
+            </td>
+            <td>
+              ${AdminUtils.createStatusBadge(tour.status)}
+              ${tour.featured ? '<i class="bi bi-star-fill text-warning"></i>' : ''}
+            </td>
+            <td>
+                <button class="btn btn-outline-info" 
+                        onclick="console.log('View clicked'); viewTour('${tour.id}')" 
+                        title="View Details"
+                        style="position: relative; z-index: 999; pointer-events: auto; cursor: pointer;">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-outline-primary" 
+                        onclick="console.log('Edit clicked'); editTour('${tour.id}')" 
+                        title="Edit"
+                        style="position: relative; z-index: 999; pointer-events: auto; cursor: pointer;">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-outline-danger" 
+                        onclick="console.log('Delete clicked'); deleteTour('${tour.id}')" 
+                        title="Delete"
+                        style="position: relative; z-index: 999; pointer-events: auto; cursor: pointer;">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      // Display pagination
+      function displayPagination(pagination) {
+        AdminUtils.renderPagination(
+          document.getElementById('paginationContainer'),
+          pagination,
+          (page) => {
+            currentPage = page;
+            loadTours();
+          }
+        );
+      }
+
+      // Helper: Toggle Modal Read-Only State
+      function toggleModalReadOnly(isReadOnly) {
+        const form = document.getElementById('tourForm');
+        // Select all inputs, selects, textareas, and buttons within the form
+        const inputs = form.querySelectorAll('input, select, textarea');
+        
+        inputs.forEach(input => {
+          if (isReadOnly) {
+            input.setAttribute('disabled', 'true');
+          } else {
+            input.removeAttribute('disabled');
+          }
+        });
+
+        // Hide/Show Save Button
+        const saveBtn = document.getElementById('saveTourBtn');
+        if(saveBtn) saveBtn.style.display = isReadOnly ? 'none' : 'block';
+
+        // Hide/Show Image Upload
+        const imgInput = document.getElementById('tourImageInput');
+        if(imgInput) imgInput.disabled = isReadOnly;
+        
+        const uploadBtn = document.querySelector('#imageUploadSection button');
+        if(uploadBtn) uploadBtn.disabled = isReadOnly;
+        
+        const deleteBtns = document.querySelectorAll('#tourImagesPreview button');
+        deleteBtns.forEach(btn => btn.style.display = isReadOnly ? 'none' : 'block');
+
+        // Hide/Show Add Date Button and Remove Date Buttons
+        const addDateBtn = document.querySelector('#addDateSection button');
+        if(addDateBtn) addDateBtn.disabled = isReadOnly;
+        
+        const removeDateBtns = document.querySelectorAll('#tourDatesList button');
+        removeDateBtns.forEach(btn => btn.disabled = isReadOnly);
+      }
+
+      // Show create modal
+      function openCreateModal() {
+        currentTourId = null;
+        document.getElementById('tourModalTitle').textContent = 'Create New Tour';
+        document.getElementById('tourForm').reset();
+        document.getElementById('tourId').value = '';
+        
+        // Reset read-only state
+        toggleModalReadOnly(false);
+        
+        // Clear dynamic fields
+        document.getElementById('tourImagesPreview').innerHTML = '<p class="text-muted">Save tour first to upload images</p>';
+        tourAvailableDates = [];
+        renderTourDates();
+        
+        const modal = new bootstrap.Modal(document.getElementById('tourModal'));
+        modal.show();
+      }
+
+      // View Tour Details
+      async function viewTour(id) {
+        console.log('viewTour called with ID:', id);
+        try {
+          AdminUtils.showLoading('loadingSpinner');
+          const response = await tourAPI.getById(id);
+          const tour = response.data || response;
+          
+          currentTourId = tour.id;
+          
+          // Populate form (reuse variables for brevity or call a helper)
+          populateTourForm(tour);
+
+          // Set UI for View Mode
+          document.getElementById('tourModalTitle').textContent = 'Tour Details (Read Only)';
+          toggleModalReadOnly(true); // Disable inputs
+
+          const modal = new bootstrap.Modal(document.getElementById('tourModal'));
+          modal.show();
+
+        } catch (error) {
+          console.error('Error viewing tour:', error);
+          AdminUtils.showToast('Failed to load tour details', 'danger');
+        } finally {
+          AdminUtils.hideLoading('loadingSpinner');
+        }
+      }
+
+      // Edit tour
+      async function editTour(id) {
+        console.log('editTour called with ID:', id);
+        try {
+          AdminUtils.showLoading('loadingSpinner');
+          const response = await tourAPI.getById(id);
+          const tour = response.data || response;
+          currentTourId = id;
+          
+          document.getElementById('tourModalTitle').textContent = 'Edit Tour';
+          
+          // Ensure Write Mode
+          toggleModalReadOnly(false);
+          
+          populateTourForm(tour);
+
+          const modal = new bootstrap.Modal(document.getElementById('tourModal'));
+          modal.show();
+        } catch (error) {
+          console.error('Error loading tour:', error);
+          AdminUtils.showToast('Failed to load tour details', 'danger');
+        } finally {
+          AdminUtils.hideLoading('loadingSpinner');
+        }
+      }
+
+      // Helper to populate form
+      function populateTourForm(tour) {
+          document.getElementById('tourId').value = tour.id || '';
+          document.getElementById('tourName').value = tour.name || '';
+          document.getElementById('tourSlug').value = tour.slug || '';
+          document.getElementById('tourDescription').value = tour.description || '';
+          document.getElementById('tourDestination').value = tour.destinationId || '';
+          
+          document.getElementById('tourDays').value = tour.duration?.days || 1;
+          document.getElementById('tourNights').value = tour.duration?.nights || 0;
+          document.getElementById('priceAdult').value = tour.price?.adult || 0;
+          document.getElementById('priceChild').value = tour.price?.children || 0;
+          
+          document.getElementById('maxGroupSize').value = tour.maxGroupSize || 20;
+          document.getElementById('minGroupSize').value = tour.minGroupSize || 1;
+          document.getElementById('tourDifficulty').value = tour.difficulty || 'medium';
+          document.getElementById('tourType').value = tour.tourType || 'classic';
+          document.getElementById('tourStatus').value = tour.status || 'draft';
+          document.getElementById('tourFeatured').checked = tour.featured || false;
+          
+          // Populate includes, excludes, requirements
+          document.getElementById('tourIncludes').value = (tour.includes || []).join('\n');
+          document.getElementById('tourExcludes').value = (tour.excludes || []).join('\n');
+          document.getElementById('tourRequirements').value = (tour.requirements || []).join('\n');
+          
+          // Populate itinerary
+          const itineraryText = tour.itinerary && tour.itinerary.length > 0 
+            ? (tour.itinerary[0].description || '') 
+            : '';
+          document.getElementById('tourItinerary').value = itineraryText;
+          
+          // Display tour images
+          if (tour.images && tour.images.length > 0) {
+            const images = tour.images.map(url => {
+              // Handle both object and string formats if backend inconsistency exists
+              return typeof url === 'string' ? { url, publicId: url.split('/').pop().split('.')[0] } : url;
+            });
+            displayTourImages(images);
+          } else {
+             document.getElementById('tourImagesPreview').innerHTML = '<p class="text-muted">No images available</p>';
+          }
+          
+          // Populate available dates
+          tourAvailableDates = tour.availableDates || [];
+          renderTourDates();
+      }
+
+      // Save tour
+      async function saveTour() {
+        const form = document.getElementById('tourForm');
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return;
+        }
+
+        const tourData = {
+          name: document.getElementById('tourName').value,
+          slug: document.getElementById('tourSlug').value,
+          description: document.getElementById('tourDescription').value,
+          destinationId: document.getElementById('tourDestination').value || null,
+          duration: {
+            days: parseInt(document.getElementById('tourDays').value),
+            nights: parseInt(document.getElementById('tourNights').value)
+          },
+          price: {
+            adult: parseFloat(document.getElementById('priceAdult').value),
+            child: parseFloat(document.getElementById('priceChild').value) || 0,
+            infant: 0,
+            currency: 'VND'
+          },
+          maxGroupSize: parseInt(document.getElementById('maxGroupSize').value),
+          minGroupSize: parseInt(document.getElementById('minGroupSize').value),
+          difficulty: document.getElementById('tourDifficulty').value,
+          tourType: document.getElementById('tourType').value,
+          status: document.getElementById('tourStatus').value,
+          featured: document.getElementById('tourFeatured').checked,
+          includes: document.getElementById('tourIncludes').value
+            .split('\n')
+            .map(item => item.trim())
+            .filter(item => item.length > 0),
+          excludes: document.getElementById('tourExcludes').value
+            .split('\n')
+            .map(item => item.trim())
+            .filter(item => item.length > 0),
+          requirements: document.getElementById('tourRequirements').value
+            .split('\n')
+            .map(item => item.trim())
+            .filter(item => item.length > 0),
+          itinerary: document.getElementById('tourItinerary').value.trim() 
+            ? [{ description: document.getElementById('tourItinerary').value.trim() }]
+            : [],
+          destinations: [],
+          availableDates: tourAvailableDates || []
+        };
+
+        try {
+          let result;
+          if (currentTourId) {
+            result = await tourAPI.update(currentTourId, tourData);
+            AdminUtils.showToast('Tour updated successfully!', 'success');
+          } else {
+            result = await tourAPI.create(tourData);
+            const createdTour = result.data || result;
+            currentTourId = createdTour.id;
+            document.getElementById('tourId').value = currentTourId;
+            document.getElementById('tourModalTitle').textContent = 'Edit Tour';
+            AdminUtils.showToast('Tour created! You can now upload images.', 'success');
+          }
+
+          loadStatistics();
+          loadTours();
+        } catch (error) {
+          console.error('Error saving tour:', error);
+          AdminUtils.showToast('Failed to save tour', 'danger');
+        }
+      }
+
+      // Delete tour
+      async function deleteTour(id) {
+        if (!confirm('Are you sure you want to delete this tour?')) return;
+
+        try {
+          await tourAPI.delete(id);
+          AdminUtils.showToast('Tour deleted successfully!', 'success');
+          loadStatistics();
+          loadTours();
+        } catch (error) {
+          console.error('Error deleting tour:', error);
+          AdminUtils.showToast('Failed to delete tour', 'danger');
+        }
+      }
+
+      // Reset filters
+      function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('difficultyFilter').value = '';
+        document.getElementById('typeFilter').value = '';
+        currentPage = 1;
+        loadTours();
+      }
+
+      // Helper: Get difficulty color
+      function getDifficultyColor(difficulty) {
+        const colors = {
+          easy: 'success',
+          moderate: 'warning',
+          challenging: 'danger'
+        };
+        return colors[difficulty] || 'secondary';
+      }
+
+      // Upload tour images
+      async function uploadTourImages() {
+        const fileInput = document.getElementById('tourImageInput');
+        const files = fileInput.files;
+
+        if (!files || files.length === 0) {
+          AdminUtils.showToast('Please select images to upload', 'warning');
+          return;
+        }
+
+        if (!currentTourId) {
+          AdminUtils.showToast('Please save the tour first before uploading images', 'warning');
+          return;
+        }
+
+        try {
+          const formData = new FormData();
+          for (let i = 0; i < files.length; i++) {
+            formData.append('images', files[i]);
+          }
+
+          const response = await fetch(`http://localhost:5000/api/uploads/tours/${currentTourId}/images`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('idToken')}`
+            },
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            AdminUtils.showToast('Images uploaded successfully!', 'success');
+            displayTourImages(result.data.images);
+            fileInput.value = ''; // Clear input
+          } else {
+            AdminUtils.showToast(result.message || 'Failed to upload images', 'danger');
+          }
+        } catch (error) {
+          console.error('Error uploading images:', error);
+          AdminUtils.showToast('Failed to upload images', 'danger');
+        }
+      }
+
+      // Display tour images
+      function displayTourImages(images) {
+        const container = document.getElementById('tourImagesPreview');
+        container.innerHTML = '';
+
+        if (!images || images.length === 0) {
+          container.innerHTML = '<p class="text-muted">No images uploaded yet</p>';
+          return;
+        }
+
+        images.forEach((img, index) => {
+          const col = document.createElement('div');
+          col.className = 'col-md-3';
+          col.innerHTML = `
+            <div class="card">
+              <img src="${img.url}" class="card-img-top" alt="Tour image ${index + 1}" style="height: 150px; object-fit: cover;">
+              <div class="card-body p-2">
+                <button type="button" class="btn btn-danger btn-sm w-100" onclick="deleteTourImage('${img.publicId}')">
+                  <i class="bi bi-trash"></i> Delete
+                </button>
+                ${index === 0 ? '<small class="text-muted d-block mt-1">Cover Image</small>' : ''}
+              </div>
+            </div>
+          `;
+          container.appendChild(col);
+        });
+      }
+
+      // Delete tour image
+      async function deleteTourImage(publicId) {
+        if (!confirm('Are you sure you want to delete this image?')) return;
+
+        if (!currentTourId) {
+          AdminUtils.showToast('Tour ID not found', 'danger');
+          return;
+        }
+
+        try {
+          const response = await fetch(`http://localhost:5000/api/uploads/tours/${currentTourId}/image`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('idToken')}`
+            },
+            body: JSON.stringify({ publicId })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            AdminUtils.showToast('Image deleted successfully!', 'success');
+            // Reload tour to get updated images
+            const tour = await tourAPI.getById(currentTourId);
+            if (tour.data && tour.data.images) {
+              displayTourImages(tour.data.images.map(url => ({ url, publicId: url.split('/').pop() })));
+            }
+          } else {
+            AdminUtils.showToast(result.message || 'Failed to delete image', 'danger');
+          }
+        } catch (error) {
+          console.error('Error deleting image:', error);
+          AdminUtils.showToast('Failed to delete image', 'danger');
+        }
+      }
+
+      // ===== Available Dates Management =====
+      let tourAvailableDates = [];
+
+      function addTourDate() {
+        const dateInput = document.getElementById('newTourDate');
+        const slotsInput = document.getElementById('newTourSlots');
+        
+        const date = dateInput.value;
+        const slots = parseInt(slotsInput.value);
+
+        if (!date) {
+          AdminUtils.showToast('Please select a date', 'warning');
+          return;
+        }
+        if (!slots || slots < 1) {
+          AdminUtils.showToast('Please enter valid slots', 'warning');
+          return;
+        }
+
+        // Check for duplicate
+        if (tourAvailableDates.some(d => d.startDate === date)) {
+          AdminUtils.showToast('This date is already added', 'warning');
+          return;
+        }
+
+        tourAvailableDates.push({
+          startDate: date,
+          spotsTotal: slots,
+          spotsAvailable: slots
+        });
+
+        // Sort by date
+        tourAvailableDates.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+        renderTourDates();
+        dateInput.value = ''; // Reset input
+      }
+
+      function removeTourDate(index) {
+        tourAvailableDates.splice(index, 1);
+        renderTourDates();
+      }
+
+      function renderTourDates() {
+        const tbody = document.getElementById('tourDatesList');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+
+        if (tourAvailableDates.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted small py-3">No dates added yet</td></tr>';
+          return;
+        }
+
+        tourAvailableDates.forEach((date, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${AdminUtils.formatDate(date.startDate)}</td>
+            <td>${date.spotsAvailable} / ${date.spotsTotal}</td>
+            <td class="text-end">
+              <button type="button" class="btn btn-outline-danger btn-sm py-0" onclick="removeTourDate(${index})">
+                <i class="bi bi-x"></i>
+              </button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      // Delete tour
+      async function deleteTour(id) {
+        console.log('deleteTour called with ID:', id);
+        if (!confirm('Are you sure you want to delete this tour? This action cannot be undone.')) {
+          return;
+        }
+
+        try {
+          AdminUtils.showLoading('loadingSpinner');
+          await tourAPI.delete(id);
+          AdminUtils.showToast('Tour deleted successfully', 'success');
+          loadTours(); // Refresh list
+        } catch (error) {
+          console.error('Error deleting tour:', error);
+          AdminUtils.showToast('Failed to delete tour', 'danger');
+        } finally {
+          AdminUtils.hideLoading('loadingSpinner');
+        }
+      }
+
+      // Test Delete Function
+      async function testDeleteTour() {
+        const id = prompt("Enter Tour ID to delete:");
+        if (!id) return;
+        console.log("Test Delete triggered for ID:", id);
+        await deleteTour(id);
+      }
+
+      // Expose functions to window for HTML onclick access
+      window.editTour = editTour;
+      window.testDeleteTour = testDeleteTour;
+      window.viewTour = viewTour;
+      window.deleteTour = deleteTour;
+      window.saveTour = saveTour;
+      window.uploadTourImages = uploadTourImages;
+      window.deleteTourImage = deleteTourImage;
+      window.addTourDate = addTourDate;
+      window.removeTourDate = removeTourDate;
+      window.resetFilters = resetFilters;
+
+      // Initialize on page load
+      document.addEventListener('DOMContentLoaded', init);
+    </script>
+  </body>
+</html>

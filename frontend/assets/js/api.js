@@ -96,6 +96,40 @@ class API {
     }
   }
 
+  // HTTP Helper Methods
+  static async get(endpoint) {
+    return this.request(endpoint, {
+      method: "GET",
+    });
+  }
+
+  static async post(endpoint, data) {
+    return this.request(endpoint, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  static async put(endpoint, data) {
+    return this.request(endpoint, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  static async patch(endpoint, data) {
+    return this.request(endpoint, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
+  static async delete(endpoint) {
+    return this.request(endpoint, {
+      method: "DELETE",
+    });
+  }
+
   // Auth endpoints
   static async login(email, password) {
     return this.request("/auth/login", {

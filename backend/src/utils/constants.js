@@ -15,6 +15,32 @@ const DESTINATION_STATUS = {
   ACTIVE: "active",
   INACTIVE: "inactive",
 };
+
+// Tour status
+const TOUR_STATUS = {
+  ACTIVE: "active",
+  INACTIVE: "inactive",
+  DRAFT: "draft",
+};
+
+// Tour difficulty levels
+const TOUR_DIFFICULTY = {
+  EASY: "easy",
+  MODERATE: "moderate",
+  CHALLENGING: "challenging",
+};
+
+// Tour types
+const TOUR_TYPE = {
+  ADVENTURE: "adventure",
+  CULTURAL: "cultural",
+  BEACH: "beach",
+  CITY: "city",
+  NATURE: "nature",
+  FOOD: "food",
+  CRUISE: "cruise",
+};
+
 // HTTP Status codes
 const HTTP_STATUS = {
   OK: 200,
@@ -92,6 +118,9 @@ const PERMISSIONS = {
 module.exports = {
   ROLES,
   DESTINATION_STATUS,
+  TOUR_STATUS,
+  TOUR_DIFFICULTY,
+  TOUR_TYPE,
   USER_STATUS,
   HTTP_STATUS,
   MESSAGES,

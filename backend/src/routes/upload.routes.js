@@ -69,6 +69,31 @@ router.delete(
 );
 
 /**
+ * @route   POST /api/uploads/tours/:tourId/images
+ * @desc    Upload tour images
+ * @access  Private (Requires tour:update permission)
+ */
+router.post(
+  "/tours/:tourId/images",
+  authenticateUser,
+  checkPermission("tour:update"),
+  uploadMultiple("images", 10),
+  UploadController.uploadTourImages
+);
+
+/**
+ * @route   DELETE /api/uploads/tours/:tourId/image
+ * @desc    Delete single tour image
+ * @access  Private (Requires tour:update permission)
+ */
+router.delete(
+  "/tours/:tourId/image",
+  authenticateUser,
+  checkPermission("tour:update"),
+  UploadController.deleteTourImage
+);
+
+/**
  * @route   GET /api/uploads/optimize
  * @desc    Get optimized image URL
  * @access  Public

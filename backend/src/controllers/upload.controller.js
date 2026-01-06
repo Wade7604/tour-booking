@@ -205,6 +205,102 @@ class UploadController {
   }
 
   /**
+   * Upload tour images
+   */
+  async uploadTourImages(req, res) {
+    try {
+      const { tourId } = req.params;
+
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "No files uploaded",
+        });
+      }
+
+      // Validate image files
+      CloudinaryService.validateImageFiles(req.files);
+
+      // Upload images to Cloudinary (using destination folder for now)
+      const results = await CloudinaryService.uploadDestinationImages(
+        req.files,
+        `tours/${tourId}`
+      );
+
+      // Extract image URLs
+      const imageUrls = results.map((result) => result.url);
+
+      // Save image URLs to tour database
+      const TourModel = require("../models/tour.model");
+      const tour = await TourModel.addImages(tourId, imageUrls);
+
+      return res.status(200).json({
+        success: true,
+        message: "Images uploaded successfully",
+        data: {
+          images: results.map((result, index) => ({
+            url: result.url,
+            publicId: result.publicId,
+            thumbnail: CloudinaryService.getThumbnail(result.publicId),
+            order: index,
+          })),
+          tour: tour,
+        },
+      });
+    } catch (error) {
+      console.error("Upload tour images error:", error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || "Failed to upload images",
+      });
+    }
+  }
+
+  /**
+   * Delete single tour image
+   */
+  async deleteTourImage(req, res) {
+    try {
+      const { tourId } = req.params;
+      const { publicId } = req.body;
+
+      if (!publicId) {
+        return res.status(400).json({
+          success: false,
+          message: "Public ID is required",
+        });
+      }
+
+      // Delete from Cloudinary
+      const result = await CloudinaryService.deleteAvatar(publicId);
+
+      // Find and remove the image URL from tour
+      const TourModel = require("../models/tour.model");
+      const tour = await TourModel.findById(tourId);
+
+      const imageToRemove = tour.images?.find((img) =>
+        img.includes(publicId)
+      );
+
+      if (imageToRemove) {
+        await TourModel.removeImage(tourId, imageToRemove);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Image deleted successfully",
+        data: result,
+      });
+    } catch (error) {
+      console.error("Delete tour image error:", error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || "Failed to delete image",
+      });
+    }
+  }
+
+  /**
    * Get optimized image URL
    */
   async getOptimizedImageUrl(req, res) {

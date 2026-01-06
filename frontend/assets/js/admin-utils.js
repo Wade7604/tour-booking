@@ -201,6 +201,62 @@ const AdminUtils = {
     }
   },
 
+  // ===== Toast Notifications =====
+  showToast(message, type = 'success', duration = 3000) {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+      toastContainer = document.createElement('div');
+      toastContainer.id = 'toastContainer';
+      toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+      toastContainer.style.zIndex = '9999';
+      document.body.appendChild(toastContainer);
+    }
+
+    // Icon and color mapping
+    const config = {
+      success: { icon: 'check-circle-fill', bg: 'success', text: 'white' },
+      danger: { icon: 'exclamation-triangle-fill', bg: 'danger', text: 'white' },
+      warning: { icon: 'exclamation-circle-fill', bg: 'warning', text: 'dark' },
+      info: { icon: 'info-circle-fill', bg: 'info', text: 'white' }
+    };
+
+    const { icon, bg, text } = config[type] || config.info;
+
+    // Create toast element
+    const toastId = `toast-${Date.now()}`;
+    const toastEl = document.createElement('div');
+    toastEl.id = toastId;
+    toastEl.className = `toast align-items-center text-${text} bg-${bg} border-0`;
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
+    
+    toastEl.innerHTML = `
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="bi bi-${icon} me-2"></i>
+          ${this.escapeHtml(message)}
+        </div>
+        <button type="button" class="btn-close btn-close-${text} me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    `;
+
+    toastContainer.appendChild(toastEl);
+
+    // Initialize and show toast
+    const toast = new bootstrap.Toast(toastEl, {
+      autohide: true,
+      delay: duration
+    });
+    toast.show();
+
+    // Remove toast element after it's hidden
+    toastEl.addEventListener('hidden.bs.toast', () => {
+      toastEl.remove();
+    });
+  },
+
   // ===== Counter Animation =====
   animateCounter(element, target, duration = 1000) {
     if (!element) return;
@@ -266,6 +322,7 @@ const AdminUtils = {
       <button class="btn btn-sm btn-${variant}" 
               onclick="${onClick}" 
               title="${title}"
+              style="position: relative; z-index: 10; pointer-events: auto;"
               ${permAttr}>
         <i class="bi bi-${icon}"></i>
       </button>

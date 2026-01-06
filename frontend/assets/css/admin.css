@@ -636,3 +636,25 @@ body {
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
+
+/* Fix for table action buttons being unclickable */
+.table td .btn-group {
+  position: relative;
+  z-index: 999;
+}
+
+.table td .btn {
+  position: relative;
+  z-index: 100;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Ensure modal is above everything */
+.modal {
+  z-index: 10055 !important;
+}
+
+.modal-backdrop {
+  z-index: 10050 !important;
+}
