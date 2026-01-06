@@ -30,18 +30,24 @@
                 style="display: none"
               >
                 <strong>Xin chào!</strong> <span id="userName"></span>
+                <br />
+                <small class="text-muted">
+                  Role: <span id="userRole"></span>
+                </small>
               </div>
 
               <div class="d-grid gap-3">
+                <!-- Nút Admin - chỉ hiện khi có permission -->
                 <button
                   id="adminBtn"
                   class="btn btn-primary btn-lg"
                   onclick="goToAdmin()"
                   style="display: none"
                 >
-                  <i class="bi bi-person-gear"></i> Admin
+                  <i class="bi bi-person-gear"></i> Admin Panel
                 </button>
 
+                <!-- Nút Sign In -->
                 <button
                   id="signInBtn"
                   class="btn btn-success btn-lg"
@@ -50,6 +56,7 @@
                   <i class="bi bi-box-arrow-in-right"></i> Sign In
                 </button>
 
+                <!-- Nút Sign Out -->
                 <button
                   id="signOutBtn"
                   class="btn btn-danger btn-lg"
@@ -59,6 +66,14 @@
                   <i class="bi bi-box-arrow-right"></i> Sign Out
                 </button>
               </div>
+
+              <!-- Thông tin permissions (chỉ dev mode) -->
+              <div id="permissionsDebug" class="mt-3" style="display: none">
+                <div class="alert alert-secondary">
+                  <strong>Your Permissions:</strong>
+                  <ul id="permissionsList" class="mb-0 text-start"></ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -67,48 +82,94 @@
 
     <!-- API Config -->
     <script src="assets/js/api.js"></script>
+    <script src="assets/js/auth-middleware.js"></script>
 
     <script>
-      // Check auth và role khi load trang
+      // Debug mode - set true để xem permissions
+      const DEBUG_MODE = false;
+
+      // Check auth và permissions khi load trang
       async function checkUserRole() {
         const token = localStorage.getItem("idToken");
 
         if (!token) {
           // Chưa đăng nhập - hiện nút Sign In
-          document.getElementById("signInBtn").style.display = "block";
-          document.getElementById("signOutBtn").style.display = "none";
-          document.getElementById("adminBtn").style.display = "none";
-          document.getElementById("userInfo").style.display = "none";
+          showGuestUI();
           return;
         }
 
         try {
-          // Gọi API lấy thông tin user hiện tại
-          const result = await API.getCurrentUser();
-          const user = result.data;
+          // Gọi API lấy thông tin user hiện tại qua AuthMiddleware
+          const user = await AuthMiddleware.getCurrentUser();
+
+          if (!user) {
+            showGuestUI();
+            return;
+          }
 
           // Hiện thông tin user
-          document.getElementById("userName").textContent = user.fullName;
+          document.getElementById("userName").textContent =
+            user.fullName || user.email;
+          document.getElementById("userRole").textContent =
+            user.roleDetails?.name || user.role || "N/A";
           document.getElementById("userInfo").style.display = "block";
 
           // Đã đăng nhập - ẩn Sign In, hiện Sign Out
           document.getElementById("signInBtn").style.display = "none";
           document.getElementById("signOutBtn").style.display = "block";
 
-          // Kiểm tra role - chỉ admin mới thấy nút Admin
-          if (user.role === "admin") {
+          // ✅ CHECK PERMISSION thay vì role
+          // Kiểm tra xem user có BẤT KỲ permission nào liên quan đến admin không
+          const hasAdminAccess = await AuthMiddleware.hasAnyPermission([
+            "user:view", // Xem users
+            "role:view", // Xem roles
+            "permission:view", // Xem permissions
+            "tour:create",
+            "destination:create",
+            "booking:view", // Quản lý bookings
+          ]);
+
+          if (hasAdminAccess) {
             document.getElementById("adminBtn").style.display = "block";
           } else {
             document.getElementById("adminBtn").style.display = "none";
+          }
+
+          // Debug mode - hiện danh sách permissions
+          if (DEBUG_MODE && user.permissions) {
+            showPermissionsDebug(user.permissions);
           }
         } catch (error) {
           console.error("Error checking user role:", error);
           // Token không hợp lệ hoặc có lỗi - xóa token và hiện nút Sign In
           localStorage.removeItem("idToken");
-          document.getElementById("signInBtn").style.display = "block";
-          document.getElementById("signOutBtn").style.display = "none";
-          document.getElementById("adminBtn").style.display = "none";
-          document.getElementById("userInfo").style.display = "none";
+          AuthMiddleware.currentUser = null;
+          showGuestUI();
+        }
+      }
+
+      // Hiển thị UI cho guest (chưa đăng nhập)
+      function showGuestUI() {
+        document.getElementById("signInBtn").style.display = "block";
+        document.getElementById("signOutBtn").style.display = "none";
+        document.getElementById("adminBtn").style.display = "none";
+        document.getElementById("userInfo").style.display = "none";
+        document.getElementById("permissionsDebug").style.display = "none";
+      }
+
+      // Debug: Hiển thị permissions của user
+      function showPermissionsDebug(permissions) {
+        const debugDiv = document.getElementById("permissionsDebug");
+        const permList = document.getElementById("permissionsList");
+
+        if (permissions && permissions.length > 0) {
+          permList.innerHTML = permissions
+            .map(
+              (p) =>
+                `<li><code>${p.name}</code> - ${p.description || "N/A"}</li>`
+            )
+            .join("");
+          debugDiv.style.display = "block";
         }
       }
 
@@ -121,9 +182,9 @@
       }
 
       function signOut() {
-        localStorage.removeItem("idToken");
-        alert("Đã đăng xuất thành công!");
-        window.location.reload();
+        if (confirm("Bạn có chắc muốn đăng xuất?")) {
+          AuthMiddleware.logout();
+        }
       }
 
       // Load khi trang sẵn sàng

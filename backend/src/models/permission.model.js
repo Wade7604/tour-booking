@@ -119,7 +119,49 @@ class PermissionModel {
       throw error;
     }
   }
+  async findByNames(permissionNames) {
+    try {
+      if (!permissionNames || permissionNames.length === 0) {
+        return [];
+      }
 
+      const permissions = [];
+
+      // Firestore WHERE IN chỉ support tối đa 10 items
+      // Nên phải chia nhỏ thành chunks
+      const chunks = this.chunkArray(permissionNames, 10);
+
+      for (const chunk of chunks) {
+        const snapshot = await this.collection.where("name", "in", chunk).get();
+
+        snapshot.docs.forEach((doc) => {
+          permissions.push(doc.data());
+        });
+      }
+
+      return permissions;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Helper: Chia array thành chunks
+  chunkArray(array, size) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+
+  // Helper: Chia array thành chunks
+  chunkArray(array, size) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
   // Get permissions by resource
   async findByResource(resource) {
     try {

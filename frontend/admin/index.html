@@ -4,13 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard - Tour Booking</title>
-
-    <!-- Bootstrap CSS -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
-    <!-- Bootstrap Icons -->
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
@@ -25,19 +22,31 @@
         <a class="nav-link active" href="/admin/index.html">
           <i class="bi bi-speedometer2"></i> Dashboard
         </a>
-        <a class="nav-link" href="/admin/users/index.html">
+        <a
+          class="nav-link"
+          href="/admin/users/index.html"
+          data-permission="user:view"
+        >
           <i class="bi bi-people-fill"></i> Users
         </a>
-        <a class="nav-link" href=/admin/roles/index.html">
+        <a
+          class="nav-link"
+          href="/admin/roles/index.html"
+          data-permission="role:view"
+        >
           <i class="bi bi-shield-fill"></i> Roles
         </a>
-        <a class="nav-link" href="/admin/permissions/index.html">
+        <a
+          class="nav-link"
+          href="/admin/permissions/index.html"
+          data-permission="permission:view"
+        >
           <i class="bi bi-key-fill"></i> Permissions
         </a>
-        <a class="nav-link" href="#tours">
+        <a class="nav-link" href="#tours" data-permission="tour:view">
           <i class="bi bi-map-fill"></i> Tours
         </a>
-        <a class="nav-link" href="#bookings">
+        <a class="nav-link" href="#bookings" data-permission="booking:view">
           <i class="bi bi-calendar-check-fill"></i> Bookings
         </a>
         <hr style="border-color: rgba(255, 255, 255, 0.3); margin: 20px 0" />
@@ -57,7 +66,7 @@
 
         <!-- Statistics Cards -->
         <div class="row">
-          <div class="col-md-3">
+          <div class="col-md-3" data-permission="user:view">
             <div class="stat-card text-center">
               <div class="stat-icon text-primary">
                 <i class="bi bi-people-fill"></i>
@@ -66,7 +75,7 @@
               <div class="stat-label">Total Users</div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-3" data-permission="tour:view">
             <div class="stat-card text-center">
               <div class="stat-icon text-success">
                 <i class="bi bi-map-fill"></i>
@@ -75,7 +84,7 @@
               <div class="stat-label">Total Tours</div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-3" data-permission="booking:view">
             <div class="stat-card text-center">
               <div class="stat-icon text-warning">
                 <i class="bi bi-calendar-check-fill"></i>
@@ -84,7 +93,7 @@
               <div class="stat-label">Total Bookings</div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-3" data-permission="booking:view">
             <div class="stat-card text-center">
               <div class="stat-icon text-info">
                 <i class="bi bi-currency-dollar"></i>
@@ -105,19 +114,32 @@
               <button
                 class="quick-action-btn"
                 onclick="window.location.href='users/index.html'"
+                data-permission="user:view"
               >
                 <i class="bi bi-person-plus-fill text-primary"></i>
                 <span>Manage Users</span>
               </button>
-              <button class="quick-action-btn" onclick="alert('Coming soon')">
+              <button
+                class="quick-action-btn"
+                onclick="alert('Coming soon')"
+                data-permission="tour:create"
+              >
                 <i class="bi bi-plus-circle-fill text-success"></i>
                 <span>Create New Tour</span>
               </button>
-              <button class="quick-action-btn" onclick="alert('Coming soon')">
+              <button
+                class="quick-action-btn"
+                onclick="alert('Coming soon')"
+                data-permission="booking:view"
+              >
                 <i class="bi bi-calendar-plus-fill text-warning"></i>
                 <span>View Bookings</span>
               </button>
-              <button class="quick-action-btn" onclick="alert('Coming soon')">
+              <button
+                class="quick-action-btn"
+                onclick="alert('Coming soon')"
+                data-any-permission="role:view,permission:view"
+              >
                 <i class="bi bi-gear-fill text-info"></i>
                 <span>System Settings</span>
               </button>
@@ -158,36 +180,48 @@
       </div>
     </div>
 
-    <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- API Config -->
     <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth-middleware.js"></script>
 
     <script>
-      // Load dashboard statistics
+      // ✅ Kiểm tra quyền và load dashboard
+      async function initDashboard() {
+        // Yêu cầu phải có ít nhất 1 permission để vào dashboard
+        const hasAccess = await AuthMiddleware.requireAnyPermission([
+          "user:view",
+          "tour:view",
+          "booking:view",
+          "role:view",
+          "permission:view",
+        ]);
+
+        if (!hasAccess) return;
+
+        // Setup UI dựa trên permissions
+        await AuthMiddleware.setupPermissionUI();
+
+        // Load statistics
+        await loadDashboardStats();
+      }
+
       async function loadDashboardStats() {
         try {
-          const result = await API.request("/users/statistics");
-
-          if (result.success) {
-            document.getElementById("totalUsers").textContent =
-              result.data.total || 0;
+          // Chỉ load nếu có quyền user:view
+          if (await AuthMiddleware.hasPermission("user:view")) {
+            const result = await API.request("/users/statistics");
+            if (result.success) {
+              document.getElementById("totalUsers").textContent =
+                result.data.total || 0;
+            }
           }
         } catch (error) {
           console.error("Error loading statistics:", error);
         }
       }
 
-      function logout() {
-        if (confirm("Are you sure you want to logout?")) {
-          localStorage.removeItem("idToken");
-          window.location.href = "../login";
-        }
-      }
-
-      // Load data on page load
-      loadDashboardStats();
+      // ✅ Init khi page load
+      document.addEventListener("DOMContentLoaded", initDashboard);
     </script>
   </body>
 </html>

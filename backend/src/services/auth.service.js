@@ -1,5 +1,7 @@
 const { getAuth } = require("../config/firebase.config");
 const UserModel = require("../models/user.model");
+const RoleModel = require("../models/role.model");
+const PermissionModel = require("../models/permission.model");
 const { MESSAGES, USER_STATUS } = require("../utils/constants");
 
 class AuthService {
@@ -154,7 +156,6 @@ class AuthService {
     }
   }
 
-  // Get current user info
   async getCurrentUser(userId) {
     try {
       const user = await UserModel.findById(userId);
@@ -162,12 +163,31 @@ class AuthService {
         throw new Error(MESSAGES.NOT_FOUND);
       }
 
-      return user;
+      const userRole = await RoleModel.findByName(user.role);
+
+      if (!userRole) {
+        return {
+          ...user,
+          roleDetails: null,
+          permissions: [],
+        };
+      }
+
+      const permissionNames = userRole.permissions || [];
+
+      const permissionDetails = await PermissionModel.findByNames(
+        permissionNames
+      );
+
+      return {
+        ...user,
+        roleDetails: userRole,
+        permissions: permissionDetails,
+      };
     } catch (error) {
       throw error;
     }
   }
-
   // Update user profile
   async updateProfile(userId, updateData) {
     try {
