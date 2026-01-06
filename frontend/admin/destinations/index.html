@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Destinations - Tour Booking Admin</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/css/admin.css" />
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+        <h4 class="mb-0"><i class="bi bi-gear-fill"></i> <span class="sidebar-text">Admin Panel</span></h4>
+        <button class="btn btn-sm btn-outline-primary" onclick="toggleSidebar()">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
+      <nav class="nav flex-column">
+        <a class="nav-link" href="/admin/index.html">
+          <i class="bi bi-speedometer2"></i> <span class="sidebar-text">Dashboard</span>
+        </a>
+        <a
+          class="nav-link"
+          href="/admin/users/index.html"
+          data-permission="user:view"
+        >
+          <i class="bi bi-people-fill"></i> <span class="sidebar-text">Users</span>
+        </a>
+        <a
+          class="nav-link"
+          href="/admin/roles/index.html"
+          data-permission="role:view"
+        >
+          <i class="bi bi-shield-fill"></i> <span class="sidebar-text">Roles</span>
+        </a>
+        <a
+          class="nav-link"
+          href="/admin/permissions/index.html"
+          data-permission="permission:view"
+        >
+          <i class="bi bi-key-fill"></i> <span class="sidebar-text">Permissions</span>
+        </a>
+        <a
+          class="nav-link active"
+          href="/admin/destinations/index.html"
+          data-permission="destination:view"
+        >
+          <i class="bi bi-geo-alt-fill"></i> <span class="sidebar-text">Destinations</span>
+        </a>
+        <a class="nav-link" href="#tours" data-permission="tour:view">
+          <i class="bi bi-map-fill"></i> <span class="sidebar-text">Tours</span>
+        </a>
+        <a class="nav-link" href="#bookings" data-permission="booking:view">
+          <i class="bi bi-calendar-check-fill"></i> <span class="sidebar-text">Bookings</span>
+        </a>
+        <hr style="border-color: rgba(255, 255, 255, 0.3); margin: 20px 0" />
+        <a class="nav-link" href="../../index.html">
+          <i class="bi bi-house-fill"></i> <span class="sidebar-text">Back to Home</span>
+        </a>
+        <a class="nav-link" href="#" onclick="AdminUtils.logout()">
+          <i class="bi bi-box-arrow-right"></i> <span class="sidebar-text">Logout</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+      <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2>Manage Destinations</h2>
+          <button
+            class="btn btn-primary"
+            onclick="openCreateModal()"
+            data-permission="destination:create"
+          >
+            <i class="bi bi-plus-circle"></i> Add Destination
+          </button>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="stat-card text-center">
+              <div class="stat-icon text-primary">
+                <i class="bi bi-geo-alt-fill"></i>
+              </div>
+              <div class="stat-value" id="totalDestinations">0</div>
+              <div class="stat-label">Total Destinations</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card text-center">
+              <div class="stat-icon text-success">
+                <i class="bi bi-check-circle-fill"></i>
+              </div>
+              <div class="stat-value" id="activeDestinations">0</div>
+              <div class="stat-label">Active</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card text-center">
+              <div class="stat-icon text-warning">
+                <i class="bi bi-x-circle-fill"></i>
+              </div>
+              <div class="stat-value" id="inactiveDestinations">0</div>
+              <div class="stat-label">Inactive</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card text-center">
+              <div class="stat-icon text-info">
+                <i class="bi bi-globe"></i>
+              </div>
+              <div class="stat-value" id="totalCountries">0</div>
+              <div class="stat-label">Countries</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">
+                <i class="bi bi-search"></i> Search
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="searchInput"
+                placeholder="Search by name, country, or city..."
+              />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">
+                <i class="bi bi-funnel"></i> Status
+              </label>
+              <select class="form-select" id="statusFilter">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">
+                <i class="bi bi-flag"></i> Country
+              </label>
+              <select class="form-select" id="countryFilter">
+                <option value="">All Countries</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">
+                <i class="bi bi-building"></i> City
+              </label>
+              <select class="form-select" id="cityFilter">
+                <option value="">All Cities</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Destinations Table -->
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-list-ul"></i> Destinations List</span>
+            <span class="badge bg-primary" id="resultCount">0 results</span>
+          </div>
+          <div class="card-body">
+            <div id="loadingSpinner" class="loading" style="display: none">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="mt-3">Loading destinations...</p>
+            </div>
+
+            <div id="destinationsTable" style="display: none">
+              <div class="table-container">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Country</th>
+                      <th>City</th>
+                      <th>Images</th>
+                      <th>Status</th>
+                      <th>Created</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="destinationsTableBody"></tbody>
+                </table>
+              </div>
+
+              <!-- Pagination -->
+              <div class="d-flex justify-content-between align-items-center mt-4">
+                <div class="text-muted">
+                  Showing <span id="showingFrom">0</span> to
+                  <span id="showingTo">0</span> of
+                  <span id="totalResults">0</span> results
+                </div>
+                <nav>
+                  <ul class="pagination mb-0" id="pagination"></ul>
+                </nav>
+              </div>
+            </div>
+
+            <div id="noResults" style="display: none" class="text-center py-5">
+              <i class="bi bi-inbox" style="font-size: 4rem; color: #cbd5e1"></i>
+              <p class="text-muted mt-3">No destinations found</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create/Edit Destination Modal -->
+    <div
+      class="modal fade"
+      id="destinationModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTitle">Add Destination</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="destinationForm">
+              <input type="hidden" id="destinationId" />
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="destinationName" class="form-label">
+                    Name <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="destinationName"
+                    required
+                  />
+                </div>
+
+                <div class="col-md-6">
+                  <label for="destinationSlug" class="form-label">
+                    Slug <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="destinationSlug"
+                    required
+                  />
+                  <small class="text-muted">URL-friendly name (e.g., ha-long-bay)</small>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="destinationCountry" class="form-label">
+                    Country <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="destinationCountry"
+                    required
+                  />
+                </div>
+
+                <div class="col-md-6">
+                  <label for="destinationCity" class="form-label">
+                    City <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="destinationCity"
+                    required
+                  />
+                </div>
+
+                <div class="col-12">
+                  <label for="destinationDescription" class="form-label">
+                    Description <span class="text-danger">*</span>
+                  </label>
+                  <textarea
+                    class="form-control"
+                    id="destinationDescription"
+                    rows="4"
+                    required
+                  ></textarea>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="destinationStatus" class="form-label">
+                    Status
+                  </label>
+                  <select class="form-select" id="destinationStatus">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">Images</label>
+                  <div class="border rounded p-3" style="background: #f8fafc">
+                    <input
+                      type="file"
+                      class="form-control"
+                      id="destinationImages"
+                      multiple
+                      accept="image/*"
+                    />
+                    <small class="text-muted d-block mt-2">
+                      <i class="bi bi-info-circle"></i> You can upload images after creating the destination
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="saveDestination()"
+            >
+              <i class="bi bi-save"></i> Save Destination
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Management Modal -->
+    <div
+      class="modal fade"
+      id="imageModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-images"></i> Manage Images
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="imageDestinationId" />
+            
+            <!-- Upload Section -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">Upload New Images</label>
+              <input
+                type="file"
+                class="form-control"
+                id="uploadImages"
+                multiple
+                accept="image/*"
+              />
+              <button
+                class="btn btn-primary mt-2"
+                onclick="uploadImages()"
+              >
+                <i class="bi bi-cloud-upload"></i> Upload
+              </button>
+              <small class="text-muted d-block mt-2">
+                Maximum 10 images, 10MB each
+              </small>
+            </div>
+
+            <!-- Existing Images -->
+            <div>
+              <label class="form-label fw-bold">Current Images</label>
+              <div id="currentImages" class="row g-3"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/admin-utils.js"></script>
+    <script src="/assets/js/sidebar-toggle.js"></script>
+    <script src="/assets/js/destination.js"></script>
+    <script src="/assets/js/auth-middleware.js"></script>
+
+    <script>
+      let currentPage = 1;
+      let currentLimit = 20;
+      let currentFilters = {};
+      let searchTimeout = null;
+      let destinationModal, imageModal;
+
+      // Initialize
+      async function init() {
+        const hasAccess = await AuthMiddleware.requirePermission(
+          "destination:view"
+        );
+        if (!hasAccess) return;
+
+        await AuthMiddleware.setupPermissionUI();
+
+        destinationModal = new bootstrap.Modal(
+          document.getElementById("destinationModal")
+        );
+        imageModal = new bootstrap.Modal(
+          document.getElementById("imageModal")
+        );
+
+        setupEventListeners();
+        await loadStatistics();
+        await loadDestinations();
+        await populateFilters();
+      }
+
+      // Setup event listeners
+      function setupEventListeners() {
+        // Search with debounce
+        document
+          .getElementById("searchInput")
+          .addEventListener("input", (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+              currentPage = 1;
+              loadDestinations();
+            }, 500);
+          });
+
+        // Filters
+        document
+          .getElementById("statusFilter")
+          .addEventListener("change", () => {
+            currentPage = 1;
+            loadDestinations();
+          });
+
+        document
+          .getElementById("countryFilter")
+          .addEventListener("change", () => {
+            currentPage = 1;
+            loadDestinations();
+          });
+
+        document
+          .getElementById("cityFilter")
+          .addEventListener("change", () => {
+            currentPage = 1;
+            loadDestinations();
+          });
+
+        // Auto-generate slug from name
+        document
+          .getElementById("destinationName")
+          .addEventListener("input", (e) => {
+            const slug = e.target.value
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-+|-+$/g, "");
+            document.getElementById("destinationSlug").value = slug;
+          });
+      }
+
+      // Load statistics
+      async function loadStatistics() {
+        try {
+          const result = await DestinationAPI.getDestinationStatistics();
+          if (result.success) {
+            const stats = result.data;
+            document.getElementById("totalDestinations").textContent =
+              stats.total || 0;
+            document.getElementById("activeDestinations").textContent =
+              stats.byStatus?.active || 0;
+            document.getElementById("inactiveDestinations").textContent =
+              stats.byStatus?.inactive || 0;
+            document.getElementById("totalCountries").textContent =
+              Object.keys(stats.byCountry || {}).length;
+          }
+        } catch (error) {
+          console.error("Error loading statistics:", error);
+        }
+      }
+
+      // Load destinations
+      async function loadDestinations() {
+        const searchQuery = document.getElementById("searchInput").value.trim();
+        const statusFilter = document.getElementById("statusFilter").value;
+        const countryFilter = document.getElementById("countryFilter").value;
+        const cityFilter = document.getElementById("cityFilter").value;
+
+        currentFilters = {};
+        if (statusFilter) currentFilters.status = statusFilter;
+        if (countryFilter) currentFilters.country = countryFilter;
+        if (cityFilter) currentFilters.city = cityFilter;
+
+        document.getElementById("loadingSpinner").style.display = "block";
+        document.getElementById("destinationsTable").style.display = "none";
+        document.getElementById("noResults").style.display = "none";
+
+        try {
+          let result;
+          if (searchQuery) {
+            result = await DestinationAPI.searchDestinations(
+              searchQuery,
+              currentPage,
+              currentLimit,
+              currentFilters
+            );
+          } else {
+            result = await DestinationAPI.getAllDestinations(
+              currentPage,
+              currentLimit,
+              currentFilters
+            );
+          }
+
+          if (result.success) {
+            displayDestinations(result.data, result.pagination);
+          }
+        } catch (error) {
+          console.error("Error loading destinations:", error);
+          alert("Failed to load destinations: " + error.message);
+        } finally {
+          document.getElementById("loadingSpinner").style.display = "none";
+        }
+      }
+
+      // Display destinations
+      function displayDestinations(destinations, pagination) {
+        const tbody = document.getElementById("destinationsTableBody");
+        tbody.innerHTML = "";
+
+        if (!destinations || destinations.length === 0) {
+          document.getElementById("noResults").style.display = "block";
+          document.getElementById("resultCount").textContent = "0 results";
+          return;
+        }
+
+        document.getElementById("destinationsTable").style.display = "block";
+        document.getElementById("resultCount").textContent =
+          `${pagination.total} result${pagination.total !== 1 ? "s" : ""}`;
+
+        destinations.forEach((dest) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>
+              <strong>${escapeHtml(dest.name)}</strong><br>
+              <small class="text-muted">${escapeHtml(dest.slug)}</small>
+            </td>
+            <td>${escapeHtml(dest.country)}</td>
+            <td>${escapeHtml(dest.city)}</td>
+            <td>
+              <span class="badge bg-info">
+                <i class="bi bi-images"></i> ${dest.images?.length || 0}
+              </span>
+            </td>
+            <td>
+              <span class="badge bg-${
+                dest.status === "active" ? "success" : "secondary"
+              }">
+                ${dest.status}
+              </span>
+            </td>
+            <td>${formatDate(dest.createdAt)}</td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <button
+                  class="btn btn-outline-primary"
+                  onclick="openEditModal('${dest.id}')"
+                  data-permission="destination:update"
+                  title="Edit"
+                >
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button
+                  class="btn btn-outline-info"
+                  onclick="openImageModal('${dest.id}')"
+                  data-permission="destination:update"
+                  title="Manage Images"
+                >
+                  <i class="bi bi-images"></i>
+                </button>
+                <button
+                  class="btn btn-outline-warning"
+                  onclick="toggleStatus('${dest.id}', '${dest.status}')"
+                  data-permission="destination:update"
+                  title="Toggle Status"
+                >
+                  <i class="bi bi-toggle-${
+                    dest.status === "active" ? "on" : "off"
+                  }"></i>
+                </button>
+                <button
+                  class="btn btn-outline-danger"
+                  onclick="deleteDestination('${dest.id}')"
+                  data-permission="destination:delete"
+                  title="Delete"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+
+        // Update pagination info
+        document.getElementById("showingFrom").textContent =
+          (pagination.page - 1) * pagination.limit + 1;
+        document.getElementById("showingTo").textContent = Math.min(
+          pagination.page * pagination.limit,
+          pagination.total
+        );
+        document.getElementById("totalResults").textContent = pagination.total;
+
+        renderPagination(pagination);
+        AuthMiddleware.setupPermissionUI();
+      }
+
+      // Render pagination
+      function renderPagination(pagination) {
+        const paginationEl = document.getElementById("pagination");
+        paginationEl.innerHTML = "";
+
+        const totalPages = pagination.totalPages;
+        const currentPage = pagination.page;
+
+        // Previous button
+        const prevLi = document.createElement("li");
+        prevLi.className = `page-item ${currentPage === 1 ? "disabled" : ""}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${
+          currentPage - 1
+        }); return false;">Previous</a>`;
+        paginationEl.appendChild(prevLi);
+
+        // Page numbers
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, currentPage + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+          const li = document.createElement("li");
+          li.className = `page-item ${i === currentPage ? "active" : ""}`;
+          li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>`;
+          paginationEl.appendChild(li);
+        }
+
+        // Next button
+        const nextLi = document.createElement("li");
+        nextLi.className = `page-item ${
+          currentPage === totalPages ? "disabled" : ""
+        }`;
+        nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${
+          currentPage + 1
+        }); return false;">Next</a>`;
+        paginationEl.appendChild(nextLi);
+      }
+
+      // Change page
+      function changePage(page) {
+        currentPage = page;
+        loadDestinations();
+      }
+
+      // Populate filter dropdowns
+      async function populateFilters() {
+        try {
+          const result = await DestinationAPI.getAllDestinations(1, 1000);
+          if (result.success) {
+            const destinations = result.data;
+
+            // Get unique countries and cities
+            const countries = [
+              ...new Set(destinations.map((d) => d.country)),
+            ].sort();
+            const cities = [...new Set(destinations.map((d) => d.city))].sort();
+
+            const countrySelect = document.getElementById("countryFilter");
+            countries.forEach((country) => {
+              const option = document.createElement("option");
+              option.value = country;
+              option.textContent = country;
+              countrySelect.appendChild(option);
+            });
+
+            const citySelect = document.getElementById("cityFilter");
+            cities.forEach((city) => {
+              const option = document.createElement("option");
+              option.value = city;
+              option.textContent = city;
+              citySelect.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error("Error populating filters:", error);
+        }
+      }
+
+      // Open create modal
+      function openCreateModal() {
+        document.getElementById("modalTitle").textContent = "Add Destination";
+        document.getElementById("destinationForm").reset();
+        document.getElementById("destinationId").value = "";
+        destinationModal.show();
+      }
+
+      // Open edit modal
+      async function openEditModal(id) {
+        try {
+          const result = await DestinationAPI.getDestinationById(id);
+          if (result.success) {
+            const dest = result.data;
+            document.getElementById("modalTitle").textContent =
+              "Edit Destination";
+            document.getElementById("destinationId").value = dest.id;
+            document.getElementById("destinationName").value = dest.name;
+            document.getElementById("destinationSlug").value = dest.slug;
+            document.getElementById("destinationCountry").value = dest.country;
+            document.getElementById("destinationCity").value = dest.city;
+            document.getElementById("destinationDescription").value =
+              dest.description;
+            document.getElementById("destinationStatus").value = dest.status;
+            destinationModal.show();
+          }
+        } catch (error) {
+          alert("Failed to load destination: " + error.message);
+        }
+      }
+
+      // Save destination
+      async function saveDestination() {
+        const id = document.getElementById("destinationId").value;
+        const data = {
+          name: document.getElementById("destinationName").value,
+          slug: document.getElementById("destinationSlug").value,
+          country: document.getElementById("destinationCountry").value,
+          city: document.getElementById("destinationCity").value,
+          description: document.getElementById("destinationDescription").value,
+          status: document.getElementById("destinationStatus").value,
+        };
+
+        try {
+          let result;
+          if (id) {
+            result = await DestinationAPI.updateDestination(id, data);
+          } else {
+            result = await DestinationAPI.createDestination(data);
+          }
+
+          if (result.success) {
+            destinationModal.hide();
+            await loadDestinations();
+            await loadStatistics();
+            alert(
+              id
+                ? "Destination updated successfully!"
+                : "Destination created successfully!"
+            );
+          }
+        } catch (error) {
+          alert("Failed to save destination: " + error.message);
+        }
+      }
+
+      // Delete destination
+      async function deleteDestination(id) {
+        if (!confirm("Are you sure you want to delete this destination?")) {
+          return;
+        }
+
+        try {
+          const result = await DestinationAPI.deleteDestination(id);
+          if (result.success) {
+            await loadDestinations();
+            await loadStatistics();
+            alert("Destination deleted successfully!");
+          }
+        } catch (error) {
+          alert("Failed to delete destination: " + error.message);
+        }
+      }
+
+      // Toggle status
+      async function toggleStatus(id, currentStatus) {
+        const newStatus = currentStatus === "active" ? "inactive" : "active";
+
+        try {
+          const result = await DestinationAPI.updateDestinationStatus(
+            id,
+            newStatus
+          );
+          if (result.success) {
+            await loadDestinations();
+            await loadStatistics();
+          }
+        } catch (error) {
+          alert("Failed to update status: " + error.message);
+        }
+      }
+
+      // Open image modal
+      async function openImageModal(id) {
+        document.getElementById("imageDestinationId").value = id;
+
+        try {
+          const result = await DestinationAPI.getDestinationById(id);
+          if (result.success) {
+            const dest = result.data;
+            displayCurrentImages(dest.images || []);
+            imageModal.show();
+          }
+        } catch (error) {
+          alert("Failed to load images: " + error.message);
+        }
+      }
+
+      // Display current images
+      function displayCurrentImages(images) {
+        const container = document.getElementById("currentImages");
+        container.innerHTML = "";
+
+        if (!images || images.length === 0) {
+          container.innerHTML =
+            '<p class="text-muted">No images uploaded yet</p>';
+          return;
+        }
+
+        images.forEach((imageUrl, index) => {
+          const col = document.createElement("div");
+          col.className = "col-md-4";
+          col.innerHTML = `
+            <div class="card">
+              <img src="${imageUrl}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="Image ${
+            index + 1
+          }">
+              <div class="card-body p-2 text-center">
+                <button class="btn btn-sm btn-danger" onclick="removeImage('${imageUrl}')">
+                  <i class="bi bi-trash"></i> Remove
+                </button>
+              </div>
+            </div>
+          `;
+          container.appendChild(col);
+        });
+      }
+
+      // Upload images
+      async function uploadImages() {
+        const id = document.getElementById("imageDestinationId").value;
+        const files = document.getElementById("uploadImages").files;
+
+        if (!files || files.length === 0) {
+          alert("Please select images to upload");
+          return;
+        }
+
+        try {
+          // Upload to Cloudinary and save to database (backend does both now)
+          const result = await API.uploadDestinationImages(id, files);
+          if (result.success) {
+            document.getElementById("uploadImages").value = "";
+            // Reload destination to get updated images
+            const destResult = await DestinationAPI.getDestinationById(id);
+            if (destResult.success) {
+              displayCurrentImages(destResult.data.images || []);
+            }
+            await loadDestinations();
+            alert("Images uploaded successfully!");
+          }
+        } catch (error) {
+          alert("Failed to upload images: " + error.message);
+        }
+      }
+
+      // Remove image
+      async function removeImage(imageUrl) {
+        const id = document.getElementById("imageDestinationId").value;
+
+        if (!confirm("Are you sure you want to remove this image?")) {
+          return;
+        }
+
+        try {
+          // Extract publicId from Cloudinary URL
+          // URL format: https://res.cloudinary.com/{cloud_name}/image/upload/{version}/{publicId}.{format}
+          const urlParts = imageUrl.split("/");
+          const fileNameWithExt = urlParts[urlParts.length - 1];
+          const fileName = fileNameWithExt.split(".")[0]; // Remove extension
+          
+          // The publicId includes the folder path
+          const uploadIndex = urlParts.indexOf("upload");
+          const publicIdParts = urlParts.slice(uploadIndex + 2); // Skip 'upload' and version
+          publicIdParts[publicIdParts.length - 1] = fileName; // Replace last part with filename without extension
+          const publicId = publicIdParts.join("/");
+
+          // Delete from Cloudinary and database (backend does both now)
+          const result = await API.deleteDestinationImage(id, publicId);
+          if (result.success) {
+            // Reload destination to get updated images
+            const destResult = await DestinationAPI.getDestinationById(id);
+            if (destResult.success) {
+              displayCurrentImages(destResult.data.images || []);
+            }
+            await loadDestinations();
+            alert("Image removed successfully!");
+          }
+        } catch (error) {
+          alert("Failed to remove image: " + error.message);
+        }
+      }
+
+      // Utility functions
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+      }
+
+      function logout() {
+        localStorage.clear();
+        window.location.href = "/login/index.html";
+      }
+
+      // Initialize on page load
+      document.addEventListener("DOMContentLoaded", init);
+    </script>
+  </body>
+</html>

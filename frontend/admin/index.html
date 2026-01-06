@@ -12,55 +12,72 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
     />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/assets/css/admin.css" />
   </head>
   <body>
     <!-- Sidebar -->
-    <div class="sidebar">
-      <h4><i class="bi bi-gear-fill"></i> Admin Panel</h4>
+    <div class="sidebar" id="sidebar">
+      <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+        <h4 class="mb-0"><i class="bi bi-gear-fill"></i> <span class="sidebar-text">Admin Panel</span></h4>
+        <button class="btn btn-sm btn-outline-primary" onclick="toggleSidebar()">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
       <nav class="nav flex-column">
         <a class="nav-link active" href="/admin/index.html">
-          <i class="bi bi-speedometer2"></i> Dashboard
+          <i class="bi bi-speedometer2"></i> <span class="sidebar-text">Dashboard</span>
         </a>
         <a
           class="nav-link"
           href="/admin/users/index.html"
           data-permission="user:view"
         >
-          <i class="bi bi-people-fill"></i> Users
+          <i class="bi bi-people-fill"></i> <span class="sidebar-text">Users</span>
         </a>
         <a
           class="nav-link"
           href="/admin/roles/index.html"
           data-permission="role:view"
         >
-          <i class="bi bi-shield-fill"></i> Roles
+          <i class="bi bi-shield-fill"></i> <span class="sidebar-text">Roles</span>
         </a>
         <a
           class="nav-link"
           href="/admin/permissions/index.html"
           data-permission="permission:view"
         >
-          <i class="bi bi-key-fill"></i> Permissions
+          <i class="bi bi-key-fill"></i> <span class="sidebar-text">Permissions</span>
+        </a>
+        <a
+          class="nav-link"
+          href="/admin/destinations/index.html"
+          data-permission="destination:view"
+        >
+          <i class="bi bi-geo-alt-fill"></i> <span class="sidebar-text">Destinations</span>
         </a>
         <a class="nav-link" href="#tours" data-permission="tour:view">
-          <i class="bi bi-map-fill"></i> Tours
+          <i class="bi bi-map-fill"></i> <span class="sidebar-text">Tours</span>
         </a>
         <a class="nav-link" href="#bookings" data-permission="booking:view">
-          <i class="bi bi-calendar-check-fill"></i> Bookings
+          <i class="bi bi-calendar-check-fill"></i> <span class="sidebar-text">Bookings</span>
         </a>
         <hr style="border-color: rgba(255, 255, 255, 0.3); margin: 20px 0" />
         <a class="nav-link" href="../index.html">
-          <i class="bi bi-house-fill"></i> Back to Home
+          <i class="bi bi-house-fill"></i> <span class="sidebar-text">Back to Home</span>
         </a>
-        <a class="nav-link" href="#" onclick="logout()">
-          <i class="bi bi-box-arrow-right"></i> Logout
+        <a class="nav-link" href="#" onclick="AdminUtils.logout()">
+          <i class="bi bi-box-arrow-right"></i> <span class="sidebar-text">Logout</span>
         </a>
       </nav>
     </div>
 
     <!-- Main Content -->
-    <div class="main-content">
+    <div class="main-content" id="mainContent">
       <div class="container-fluid">
         <h2 class="mb-4">Dashboard Overview</h2>
 
@@ -104,75 +121,25 @@
           </div>
         </div>
 
-        <!-- Quick Actions -->
+        <!-- Charts Section -->
         <div class="row mt-4">
-          <div class="col-md-6">
-            <div class="quick-action-card">
-              <h5 class="mb-3">
-                <i class="bi bi-lightning-fill text-warning"></i> Quick Actions
-              </h5>
-              <button
-                class="quick-action-btn"
-                onclick="window.location.href='users/index.html'"
-                data-permission="user:view"
-              >
-                <i class="bi bi-person-plus-fill text-primary"></i>
-                <span>Manage Users</span>
-              </button>
-              <button
-                class="quick-action-btn"
-                onclick="alert('Coming soon')"
-                data-permission="tour:create"
-              >
-                <i class="bi bi-plus-circle-fill text-success"></i>
-                <span>Create New Tour</span>
-              </button>
-              <button
-                class="quick-action-btn"
-                onclick="alert('Coming soon')"
-                data-permission="booking:view"
-              >
-                <i class="bi bi-calendar-plus-fill text-warning"></i>
-                <span>View Bookings</span>
-              </button>
-              <button
-                class="quick-action-btn"
-                onclick="alert('Coming soon')"
-                data-any-permission="role:view,permission:view"
-              >
-                <i class="bi bi-gear-fill text-info"></i>
-                <span>System Settings</span>
-              </button>
+          <div class="col-md-8">
+            <div class="card">
+              <div class="card-header">
+                <i class="bi bi-graph-up"></i> Bookings Overview
+              </div>
+              <div class="card-body">
+                <canvas id="bookingsChart" height="80"></canvas>
+              </div>
             </div>
           </div>
-
-          <div class="col-md-6">
-            <div class="quick-action-card">
-              <h5 class="mb-3">
-                <i class="bi bi-graph-up text-success"></i> Recent Activity
-              </h5>
-              <div class="list-group">
-                <div class="list-group-item">
-                  <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">New User Registered</h6>
-                    <small class="text-muted">3 mins ago</small>
-                  </div>
-                  <p class="mb-1">John Doe signed up via Google</p>
-                </div>
-                <div class="list-group-item">
-                  <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">Tour Booking</h6>
-                    <small class="text-muted">15 mins ago</small>
-                  </div>
-                  <p class="mb-1">New booking for "Ha Long Bay Tour"</p>
-                </div>
-                <div class="list-group-item">
-                  <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">User Role Updated</h6>
-                    <small class="text-muted">1 hour ago</small>
-                  </div>
-                  <p class="mb-1">Jane Smith promoted to Admin</p>
-                </div>
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-header">
+                <i class="bi bi-pie-chart"></i> User Distribution
+              </div>
+              <div class="card-body">
+                <canvas id="usersChart"></canvas>
               </div>
             </div>
           </div>
@@ -182,6 +149,103 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/admin-utils.js"></script>
+    <script src="../assets/js/sidebar-toggle.js"></script>
+    <script src="../assets/js/auth-middleware.js"></script>
+
+    <script>
+      // Initialize charts
+      let bookingsChart, usersChart;
+
+      function initCharts() {
+        // Bookings Line Chart
+        const bookingsCtx = document.getElementById('bookingsChart').getContext('2d');
+        bookingsChart = new Chart(bookingsCtx, {
+          type: 'line',
+          data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+              label: 'Bookings',
+              data: [12, 19, 15, 25, 22, 30],
+              borderColor: '#0284c7',
+              backgroundColor: 'rgba(2, 132, 199, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                display: false
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: {
+                  color: 'rgba(0, 0, 0, 0.05)'
+                }
+              },
+              x: {
+                grid: {
+                  display: false
+                }
+              }
+            }
+          }
+        });
+
+        // Users Doughnut Chart
+        const usersCtx = document.getElementById('usersChart').getContext('2d');
+        usersChart = new Chart(usersCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Active', 'Inactive', 'Pending'],
+            datasets: [{
+              data: [65, 25, 10],
+              backgroundColor: [
+                '#10b981',
+                '#64748b',
+                '#f59e0b'
+              ],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                position: 'bottom'
+              }
+            }
+          }
+        });
+      }
+
+      async function init() {
+        const hasAccess = await AuthMiddleware.requireAuth();
+        if (!hasAccess) return;
+
+        await AuthMiddleware.setupPermissionUI();
+        initCharts();
+        // Load statistics here
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+    </script>
+  </body>
+</html>
+   
+
+          
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/admin-utils.js"></script>
+    <script src="../assets/js/sidebar-toggle.js"></script>
     <script src="../assets/js/auth-middleware.js"></script>
 
     <script>

@@ -235,7 +235,7 @@ if (registerForm) {
       const response = await API.register(fields);
       if (response.success) {
         showAlert("Đăng ký thành công!", "success");
-        setTimeout(() => (window.location.href = "login.html"), 2000);
+        setTimeout(() => (window.location.href = "/login"), 2000);
       }
     } catch (error) {
       // Nếu server trả về lỗi validation (400), hiển thị lỗi đó lên field
@@ -295,7 +295,7 @@ function checkAuthStatus() {
   // If on login/register page and already logged in, redirect to dashboard
   const currentPage = window.location.pathname;
   if (
-    (currentPage.includes("login.html") ||
+    (currentPage.includes("/login") ||
       currentPage.includes("register.html")) &&
     token
   ) {
@@ -314,7 +314,7 @@ function checkAuthStatus() {
   );
 
   if (isProtectedPage && !token) {
-    window.location.href = "login.html";
+    window.location.href = "/login";
   }
 }
 
@@ -330,11 +330,11 @@ function logout() {
   auth
     .signOut()
     .then(() => {
-      window.location.href = "login.html";
+      window.location.href = "/login";
     })
     .catch((error) => {
       console.error("Logout error:", error);
       // Force redirect anyway
-      window.location.href = "login.html";
+      window.location.href = "/login";
     });
 }

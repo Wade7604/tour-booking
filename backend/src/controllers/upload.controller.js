@@ -76,15 +76,28 @@ class UploadController {
         destinationId
       );
 
+      // Extract image URLs
+      const imageUrls = results.map((result) => result.url);
+
+      // Save image URLs to destination database
+      const DestinationService = require("../services/destination.service");
+      const updatedDestination = await DestinationService.addImages(
+        destinationId,
+        imageUrls
+      );
+
       return res.status(200).json({
         success: true,
         message: "Images uploaded successfully",
-        data: results.map((result, index) => ({
-          url: result.url,
-          publicId: result.publicId,
-          thumbnail: CloudinaryService.getThumbnail(result.publicId),
-          order: index,
-        })),
+        data: {
+          images: results.map((result, index) => ({
+            url: result.url,
+            publicId: result.publicId,
+            thumbnail: CloudinaryService.getThumbnail(result.publicId),
+            order: index,
+          })),
+          destination: updatedDestination,
+        },
       });
     } catch (error) {
       console.error("Upload destination images error:", error);
@@ -100,6 +113,7 @@ class UploadController {
    */
   async deleteDestinationImage(req, res) {
     try {
+      const { destinationId } = req.params;
       const { publicId } = req.body;
 
       if (!publicId) {
@@ -109,7 +123,25 @@ class UploadController {
         });
       }
 
+      // Delete from Cloudinary
       const result = await CloudinaryService.deleteAvatar(publicId);
+
+      // Extract URL from publicId to remove from database
+      // The URL pattern is typically: https://res.cloudinary.com/{cloud_name}/image/upload/{version}/{publicId}
+      // We need to find and remove the matching URL from destination.images array
+      const DestinationService = require("../services/destination.service");
+      const destination = await DestinationService.getDestinationById(
+        destinationId
+      );
+
+      // Find the image URL that contains this publicId
+      const imageToRemove = destination.images?.find((img) =>
+        img.includes(publicId)
+      );
+
+      if (imageToRemove) {
+        await DestinationService.removeImages(destinationId, [imageToRemove]);
+      }
 
       return res.status(200).json({
         success: true,
@@ -130,6 +162,7 @@ class UploadController {
    */
   async deleteMultipleDestinationImages(req, res) {
     try {
+      const { destinationId } = req.params;
       const { publicIds } = req.body;
 
       if (!publicIds || !Array.isArray(publicIds)) {
@@ -139,7 +172,23 @@ class UploadController {
         });
       }
 
+      // Delete from Cloudinary
       const result = await CloudinaryService.deleteDestinationImages(publicIds);
+
+      // Remove URLs from destination database
+      const DestinationService = require("../services/destination.service");
+      const destination = await DestinationService.getDestinationById(
+        destinationId
+      );
+
+      // Find all image URLs that contain any of the publicIds
+      const imagesToRemove = destination.images?.filter((img) =>
+        publicIds.some((publicId) => img.includes(publicId))
+      );
+
+      if (imagesToRemove && imagesToRemove.length > 0) {
+        await DestinationService.removeImages(destinationId, imagesToRemove);
+      }
 
       return res.status(200).json({
         success: true,
