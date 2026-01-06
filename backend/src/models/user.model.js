@@ -125,13 +125,21 @@ class UserModel {
       throw error;
     }
   }
-
   // Update user
   async update(userId, updateData) {
     try {
       const userRef = this.collection.doc(userId);
+
+      // ✅ Filter out undefined and null values
+      const filteredData = {};
+      Object.keys(updateData).forEach((key) => {
+        if (updateData[key] !== undefined && updateData[key] !== null) {
+          filteredData[key] = updateData[key];
+        }
+      });
+
       const updatePayload = {
-        ...updateData,
+        ...filteredData,
         updatedAt: new Date().toISOString(),
       };
 

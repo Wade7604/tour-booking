@@ -7,28 +7,34 @@ const roles = [
     description: "Full system access",
     isSystem: true,
     permissions: [
-      // All permissions
+      // User permissions
       "user:view",
       "user:create",
       "user:update",
+      "user:update-own",
       "user:delete",
+      // Tour permissions
       "tour:view",
       "tour:create",
       "tour:update",
       "tour:delete",
+      // Destination permissions
       "destination:view",
       "destination:create",
       "destination:update",
       "destination:delete",
+      // Booking permissions
       "booking:view",
       "booking:view-own",
       "booking:create",
       "booking:update",
       "booking:delete",
+      // Role permissions
       "role:view",
       "role:create",
       "role:update",
       "role:delete",
+      // Permission permissions
       "permission:view",
       "permission:create",
       "permission:update",
@@ -42,6 +48,7 @@ const roles = [
     isSystem: true,
     permissions: [
       "user:view",
+      "user:update-own",
       "tour:view",
       "tour:create",
       "tour:update",
@@ -51,6 +58,8 @@ const roles = [
       "destination:update",
       "destination:delete",
       "booking:view",
+      "booking:view-own",
+      "booking:create",
       "booking:update",
       "role:view",
       "permission:view",
@@ -62,6 +71,7 @@ const roles = [
     description: "Regular user - can book tours",
     isSystem: true,
     permissions: [
+      "user:update-own",
       "tour:view",
       "destination:view",
       "booking:view-own",
@@ -82,15 +92,38 @@ const seedRoles = async () => {
     console.log("🌱 Seeding roles...");
 
     for (const roleData of roles) {
-      const exists = await RoleModel.nameExists(roleData.name);
+      try {
+        // Try to find the existing role
+        const existingRole = await RoleModel.findByName(roleData.name);
 
-      if (!exists) {
-        await RoleModel.create(roleData);
-        console.log(
-          `✅ Created role: ${roleData.name} (${roleData.permissions.length} permissions)`
-        );
-      } else {
-        console.log(`⏭️  Role already exists: ${roleData.name}`);
+        if (existingRole) {
+          // Role exists - update it
+          const roleId = existingRole.id;
+          await RoleModel.update(roleId, {
+            displayName: roleData.displayName,
+            description: roleData.description,
+            permissions: roleData.permissions,
+          });
+          console.log(
+            `🔄 Updated role: ${roleData.name} (${roleData.permissions.length} permissions)`
+          );
+        } else {
+          // Role doesn't exist - create it
+          await RoleModel.create(roleData);
+          console.log(
+            `✅ Created role: ${roleData.name} (${roleData.permissions.length} permissions)`
+          );
+        }
+      } catch (error) {
+        // If role doesn't exist, create it
+        if (error.message === "Role not found") {
+          await RoleModel.create(roleData);
+          console.log(
+            `✅ Created role: ${roleData.name} (${roleData.permissions.length} permissions)`
+          );
+        } else {
+          throw error;
+        }
       }
     }
 

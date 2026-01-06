@@ -21,6 +21,12 @@ const permissions = [
     description: "Update user information",
   },
   {
+    name: "user:update-own",
+    resource: "user",
+    action: "update-own",
+    description: "Update own user information",
+  },
+  {
     name: "user:delete",
     resource: "user",
     action: "delete",

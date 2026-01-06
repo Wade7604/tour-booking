@@ -10,7 +10,7 @@ class UserManager {
   // Initialize
   async init() {
     this.setupEventListeners();
-    await this.loadAllRoles(); // Load roles trước
+    await this.loadAllRoles();
     this.loadUsers();
     this.loadStatistics();
   }
@@ -73,6 +73,7 @@ class UserManager {
       reindexAllBtn.addEventListener("click", () => this.reindexAllUsers());
     }
   }
+
   async loadAllRoles() {
     try {
       const result = await API.request("/roles");
@@ -81,7 +82,6 @@ class UserManager {
       }
     } catch (error) {
       console.error("Error loading roles:", error);
-      // Fallback về roles mặc định nếu API lỗi
       this.allRoles = [
         { name: "user", displayName: "User" },
         { name: "admin", displayName: "Admin" },
@@ -89,6 +89,7 @@ class UserManager {
       ];
     }
   }
+
   // Load Users
   async loadUsers(search = "") {
     const loading = document.getElementById("usersLoading");
@@ -216,7 +217,6 @@ class UserManager {
     paginationEl.innerHTML = "";
     if (pagination.totalPages <= 1) return;
 
-    // Previous button
     const prevLi = document.createElement("li");
     prevLi.className = `page-item ${
       pagination.currentPage === 1 ? "disabled" : ""
@@ -230,7 +230,6 @@ class UserManager {
     `;
     paginationEl.appendChild(prevLi);
 
-    // Page numbers
     const startPage = Math.max(1, pagination.currentPage - 2);
     const endPage = Math.min(pagination.totalPages, pagination.currentPage + 2);
 
@@ -271,7 +270,6 @@ class UserManager {
       paginationEl.appendChild(lastLi);
     }
 
-    // Next button
     const nextLi = document.createElement("li");
     nextLi.className = `page-item ${
       pagination.currentPage === pagination.totalPages ? "disabled" : ""
@@ -286,7 +284,6 @@ class UserManager {
     paginationEl.appendChild(nextLi);
   }
 
-  // Go to Page
   goToPage(page) {
     this.currentPage = page;
     const searchInput = document.getElementById("searchUsers");
@@ -294,7 +291,6 @@ class UserManager {
     this.loadUsers(searchTerm);
   }
 
-  // Load Statistics
   async loadStatistics() {
     try {
       const result = await API.request("/users/statistics");
@@ -307,7 +303,6 @@ class UserManager {
     }
   }
 
-  // Display Statistics
   displayStatistics(stats) {
     const totalUsersEl = document.getElementById("totalUsers");
     const activeUsersEl = document.getElementById("activeUsers");
@@ -318,7 +313,6 @@ class UserManager {
     if (inactiveUsersEl)
       inactiveUsersEl.textContent = stats.byStatus?.inactive || 0;
 
-    // Display role distribution
     const roleStatsEl = document.getElementById("roleStats");
     if (roleStatsEl && stats.byRole) {
       roleStatsEl.innerHTML = Object.entries(stats.byRole)
@@ -334,7 +328,6 @@ class UserManager {
     }
   }
 
-  // View User Details
   async viewUser(userId) {
     try {
       const result = await API.request(`/users/${userId}`);
@@ -347,7 +340,6 @@ class UserManager {
     }
   }
 
-  // Show View Modal
   showViewModal(user) {
     const modalHtml = `
       <div class="modal fade" id="viewUserModal" tabindex="-1">
@@ -429,10 +421,8 @@ class UserManager {
     modal.show();
   }
 
-  // Edit User
   async editUser(userId) {
     try {
-      // Close view modal if open
       this.removeModal("viewUserModal");
 
       const result = await API.request(`/users/${userId}`);
@@ -444,9 +434,8 @@ class UserManager {
       this.showError("Failed to load user: " + error.message);
     }
   }
-  // Cũng update showEditModal để hiển thị dynamic roles trong dropdown (disabled)
+
   showEditModal(user) {
-    // Tạo options từ allRoles
     const roleOptions = this.allRoles
       .map(
         (role) => `
@@ -468,6 +457,38 @@ class UserManager {
           <form id="editUserForm">
             <div class="modal-body">
               <div class="row">
+                <!-- Avatar Upload Section -->
+                <div class="col-12 mb-4">
+                  <div class="text-center">
+                    <img src="${
+                      user.avatar || "https://via.placeholder.com/150"
+                    }" 
+                         id="avatarPreview"
+                         class="rounded-circle img-thumbnail mb-3" 
+                         style="width: 150px; height: 150px; object-fit: cover;">
+                    <div>
+                      <input type="file" 
+                             class="d-none" 
+                             id="avatarInput" 
+                             accept="image/jpeg,image/jpg,image/png,image/webp">
+                      <button type="button" 
+                              class="btn btn-sm btn-primary" 
+                              onclick="document.getElementById('avatarInput').click()">
+                        <i class="bi bi-cloud-upload"></i> Upload New Avatar
+                      </button>
+                      <button type="button" 
+                              class="btn btn-sm btn-secondary" 
+                              id="uploadAvatarBtn"
+                              style="display: none;">
+                        <i class="bi bi-check-circle"></i> Save Avatar
+                      </button>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                      Max 10MB. Accepted: JPG, PNG, WebP
+                    </small>
+                  </div>
+                </div>
+
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Full Name <span class="text-danger">*</span></label>
                   <input type="text" class="form-control" id="editFullName" value="${
@@ -484,12 +505,6 @@ class UserManager {
                   <label class="form-label">Phone</label>
                   <input type="tel" class="form-control" id="editPhone" value="${
                     user.phone || ""
-                  }">
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Avatar URL</label>
-                  <input type="url" class="form-control" id="editAvatar" value="${
-                    user.avatar || ""
                   }">
                 </div>
                 <div class="col-md-6 mb-3">
@@ -514,7 +529,7 @@ class UserManager {
               </div>
               
               <div class="alert alert-info">
-                <i class="bi bi-info-circle"></i> You can only update basic info (name, email, phone, avatar). Use the buttons below for role/status changes.
+                <i class="bi bi-info-circle"></i> You can update basic info and avatar here. Use the buttons below for role/status changes.
               </div>
             </div>
             <div class="modal-footer">
@@ -547,13 +562,105 @@ class UserManager {
     const modal = new bootstrap.Modal(document.getElementById("editUserModal"));
     modal.show();
 
+    // Setup avatar upload preview
+    const avatarInput = document.getElementById("avatarInput");
+    const avatarPreview = document.getElementById("avatarPreview");
+    const uploadAvatarBtn = document.getElementById("uploadAvatarBtn");
+
+    avatarInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        // Validate file
+        if (!file.type.match(/image\/(jpeg|jpg|png|webp)/)) {
+          this.showError(
+            "Invalid file type. Only JPEG, PNG, and WebP are allowed"
+          );
+          return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          this.showError("File size exceeds 10MB limit");
+          return;
+        }
+
+        // Preview image
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          avatarPreview.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+
+        uploadAvatarBtn.style.display = "inline-block";
+      }
+    });
+
+    // Upload avatar button
+    uploadAvatarBtn.addEventListener("click", () => {
+      this.uploadAvatar(user.id);
+    });
+
     document.getElementById("editUserForm").addEventListener("submit", (e) => {
       e.preventDefault();
       this.saveUserEdits(user.id);
     });
   }
+  // Thay đổi trong UserManager class
 
-  // Save User Edits
+  // Upload Avatar (Admin version - for specific user)
+  async uploadAvatar(userId) {
+    const avatarInput = document.getElementById("avatarInput");
+    const uploadBtn = document.getElementById("uploadAvatarBtn");
+    const file = avatarInput.files[0];
+
+    if (!file) {
+      this.showError("Please select a file");
+      return;
+    }
+
+    // Validate file
+    if (!file.type.match(/image\/(jpeg|jpg|png|webp)/)) {
+      this.showError("Invalid file type. Only JPEG, PNG, and WebP are allowed");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      this.showError("File size exceeds 10MB limit");
+      return;
+    }
+
+    const originalText = uploadBtn.innerHTML;
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML =
+      '<span class="spinner-border spinner-border-sm"></span> Uploading...';
+
+    try {
+      // Use API.uploadAvatar with userId parameter for admin upload
+      const result = await API.uploadAvatar(file, userId);
+
+      if (result.success) {
+        this.showSuccess("Avatar uploaded successfully!");
+
+        // Update preview with new URL
+        const avatarPreview = document.getElementById("avatarPreview");
+        if (avatarPreview && result.data.url) {
+          avatarPreview.src = result.data.url;
+        }
+
+        // Hide upload button
+        uploadBtn.style.display = "none";
+
+        // Reset file input
+        avatarInput.value = "";
+
+        // Reload users table to show updated avatar
+        this.loadUsers();
+      }
+    } catch (error) {
+      this.showError("Failed to upload avatar: " + error.message);
+    } finally {
+      uploadBtn.disabled = false;
+      uploadBtn.innerHTML = originalText;
+    }
+  }
+  // Save User Edits (Basic info only, not role/status)
   async saveUserEdits(userId) {
     const submitBtn = document.querySelector(
       "#editUserForm button[type='submit']"
@@ -567,9 +674,13 @@ class UserManager {
       const updateData = {
         fullName: document.getElementById("editFullName").value,
         email: document.getElementById("editEmail").value,
-        phone: document.getElementById("editPhone").value || null,
-        avatar: document.getElementById("editAvatar").value || null,
       };
+
+      // Only add phone if it has a value
+      const phone = document.getElementById("editPhone").value;
+      if (phone && phone.trim() !== "") {
+        updateData.phone = phone.trim();
+      }
 
       const result = await API.request(`/users/${userId}`, {
         method: "PUT",
@@ -590,9 +701,47 @@ class UserManager {
     }
   }
 
-  // Sửa lại showUpdateRoleModal để dùng dynamic roles
+  async saveUserEdits(userId) {
+    const submitBtn = document.querySelector(
+      "#editUserForm button[type='submit']"
+    );
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML =
+      '<span class="spinner-border spinner-border-sm"></span> Saving...';
+
+    try {
+      const updateData = {
+        fullName: document.getElementById("editFullName").value,
+        email: document.getElementById("editEmail").value,
+      };
+
+      // Only add phone if it has a value
+      const phone = document.getElementById("editPhone").value;
+      if (phone && phone.trim() !== "") {
+        updateData.phone = phone.trim();
+      }
+
+      const result = await API.request(`/users/${userId}`, {
+        method: "PUT",
+        body: JSON.stringify(updateData),
+      });
+
+      if (result.success) {
+        this.showSuccess("User updated successfully!");
+        this.removeModal("editUserModal");
+        this.loadUsers();
+        this.loadStatistics();
+      }
+    } catch (error) {
+      this.showError("Failed to update user: " + error.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
+    }
+  }
+
   showUpdateRoleModal(userId, currentRole) {
-    // Tạo options từ allRoles
     const roleOptions = this.allRoles
       .map(
         (role) => `
@@ -651,7 +800,6 @@ class UserManager {
       });
   }
 
-  // Update User Role
   async updateUserRole(userId) {
     const submitBtn = document.querySelector(
       "#updateRoleForm button[type='submit']"
@@ -680,7 +828,6 @@ class UserManager {
     }
   }
 
-  // Show Update Status Modal
   showUpdateStatusModal(userId, currentStatus) {
     const modalHtml = `
       <div class="modal fade" id="updateStatusModal" tabindex="-1">
@@ -735,7 +882,6 @@ class UserManager {
       });
   }
 
-  // Update User Status
   async updateUserStatus(userId) {
     const submitBtn = document.querySelector(
       "#updateStatusForm button[type='submit']"
@@ -764,7 +910,6 @@ class UserManager {
     }
   }
 
-  // Confirm Delete
   confirmDelete(userId, userName) {
     const modalHtml = `
       <div class="modal fade" id="deleteUserModal" tabindex="-1">
@@ -809,7 +954,6 @@ class UserManager {
     modal.show();
   }
 
-  // Delete User
   async deleteUser(userId) {
     const deleteBtn = document.querySelector("#deleteUserModal .btn-danger");
     deleteBtn.disabled = true;
@@ -834,7 +978,6 @@ class UserManager {
     }
   }
 
-  // Reindex User
   async reindexUser(userId) {
     try {
       const result = await API.request(`/users/${userId}/reindex`, {
@@ -849,7 +992,6 @@ class UserManager {
     }
   }
 
-  // Reindex All Users
   async reindexAllUsers() {
     if (
       !confirm(
@@ -875,18 +1017,16 @@ class UserManager {
       this.showError("Failed to reindex users: " + error.message);
     }
   }
+
   removeModal(modalId) {
     const existingModal = document.getElementById(modalId);
     if (existingModal) {
-      // 1. Lấy instance của Bootstrap Modal nếu có và ẩn nó đi
       const modalInstance = bootstrap.Modal.getInstance(existingModal);
       if (modalInstance) {
         modalInstance.hide();
       }
-      // 2. Xóa phần tử khỏi HTML
       existingModal.remove();
 
-      // 3. Dọn dẹp lớp nền mờ (backdrop) và reset body class (lỗi phổ biến của Bootstrap)
       const backdrop = document.querySelector(".modal-backdrop");
       if (backdrop) {
         backdrop.remove();
@@ -896,7 +1036,7 @@ class UserManager {
       document.body.style.paddingRight = "";
     }
   }
-  // Toast notifications
+
   showSuccess(message) {
     this.showToast(message, "success");
   }

@@ -21,7 +21,21 @@ class API {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
+
+      // Check if response has content
+      const text = await response.text();
+
+      if (!text) {
+        throw new Error("Empty response from server");
+      }
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.error("Failed to parse JSON:", text);
+        throw new Error("Invalid JSON response from server");
+      }
 
       if (!response.ok) {
         throw new Error(data.message || "Something went wrong");
@@ -29,6 +43,55 @@ class API {
 
       return data;
     } catch (error) {
+      console.error("API Request Error:", error);
+      throw error;
+    }
+  }
+
+  // Helper method for file uploads (without Content-Type header)
+  static async uploadRequest(endpoint, formData, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const token = localStorage.getItem("idToken");
+
+    const config = {
+      method: "POST",
+      body: formData,
+      ...options,
+    };
+
+    // Add token if exists (don't set Content-Type for FormData)
+    if (token) {
+      config.headers = {
+        Authorization: `Bearer ${token}`,
+        ...options.headers,
+      };
+    }
+
+    try {
+      const response = await fetch(url, config);
+
+      // Check if response has content
+      const text = await response.text();
+
+      if (!text) {
+        throw new Error("Empty response from server");
+      }
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.error("Failed to parse JSON:", text);
+        throw new Error("Invalid JSON response from server");
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || "Upload failed");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Upload Request Error:", error);
       throw error;
     }
   }
@@ -73,4 +136,126 @@ class API {
       method: "POST",
     });
   }
+
+  // Upload endpoints
+  static async uploadAvatar(file, userId = null) {
+    try {
+      // Validate file
+      if (!file) {
+        throw new Error("No file provided");
+      }
+
+      // Check file type
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error(
+          "Invalid file type. Only JPEG, PNG, and WebP are allowed"
+        );
+      }
+
+      // Check file size (10MB)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        throw new Error("File size exceeds 10MB limit");
+      }
+
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      // If userId is provided, use admin route to upload for specific user
+      const endpoint = userId ? `/uploads/avatar/${userId}` : "/uploads/avatar";
+
+      return this.uploadRequest(endpoint, formData);
+    } catch (error) {
+      console.error("Upload Avatar Error:", error);
+      throw error;
+    }
+  }
+
+  static async uploadDestinationImages(destinationId, files) {
+    try {
+      // Validate files
+      if (!files || files.length === 0) {
+        throw new Error("No files provided");
+      }
+
+      if (files.length > 10) {
+        throw new Error("Maximum 10 files allowed");
+      }
+
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+      ];
+      const maxSize = 10 * 1024 * 1024;
+
+      // Validate each file
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        if (!allowedTypes.includes(file.type)) {
+          throw new Error(
+            `File ${
+              i + 1
+            }: Invalid file type. Only JPEG, PNG, and WebP are allowed`
+          );
+        }
+
+        if (file.size > maxSize) {
+          throw new Error(`File ${i + 1}: File size exceeds 10MB limit`);
+        }
+      }
+
+      const formData = new FormData();
+
+      // Add multiple files
+      for (let i = 0; i < files.length; i++) {
+        formData.append("images", files[i]);
+      }
+
+      return this.uploadRequest(
+        `/uploads/destinations/${destinationId}/images`,
+        formData
+      );
+    } catch (error) {
+      console.error("Upload Destination Images Error:", error);
+      throw error;
+    }
+  }
+
+  static async deleteDestinationImage(destinationId, publicId) {
+    return this.request(`/uploads/destinations/${destinationId}/image`, {
+      method: "DELETE",
+      body: JSON.stringify({ publicId }),
+    });
+  }
+
+  static async deleteMultipleDestinationImages(destinationId, publicIds) {
+    return this.request(`/uploads/destinations/${destinationId}/images`, {
+      method: "DELETE",
+      body: JSON.stringify({ publicIds }),
+    });
+  }
+
+  static async getOptimizedImageUrl(publicId, options = {}) {
+    const params = new URLSearchParams({ publicId, ...options });
+    return this.request(`/uploads/optimize?${params}`);
+  }
+
+  static async getThumbnailUrl(publicId, width = 300, height = 300) {
+    const params = new URLSearchParams({ publicId, width, height });
+    return this.request(`/uploads/thumbnail?${params}`);
+  }
+}
+
+// Export for use in other files
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = API;
 }
