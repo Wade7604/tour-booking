@@ -363,18 +363,21 @@
                 <div class="tab-pane fade" id="itinerary" role="tabpanel">
                   <div class="row g-3">
                     <div class="col-12">
-                      <label class="form-label">Tour Itinerary (Day-by-Day Schedule)</label>
-                      <textarea class="form-control" id="tourItinerary" rows="10" placeholder="Example format:
-Day 1: Arrival in Hanoi
-- Pick up from airport
-- Check-in hotel
-- Welcome dinner
-
-Day 2: Hanoi City Tour
-- Visit Ho Chi Minh Mausoleum
-- Explore Old Quarter
-- Lunch at local restaurant"></textarea>
-                      <small class="text-muted">Describe the tour schedule day by day. Use clear formatting for better readability.</small>
+                      <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        <strong>Auto-generate Itinerary:</strong> Fill in the Days field in the "Duration & Pricing" tab first, then come back here. The itinerary days will be automatically generated based on your tour duration.
+                      </div>
+                      <button type="button" class="btn btn-primary mb-3" onclick="generateItineraryDays()">
+                        <i class="bi bi-arrow-clockwise"></i> Generate/Refresh Itinerary Days
+                      </button>
+                    </div>
+                    <div class="col-12">
+                      <div id="itineraryContainer">
+                        <p class="text-muted text-center py-4">
+                          <i class="bi bi-calendar-check"></i><br>
+                          Click "Generate/Refresh Itinerary Days" button above after setting the tour duration
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -422,7 +425,8 @@ Day 2: Hanoi City Tour
                           <table class="table table-sm table-hover bg-white mb-0" id="tourDatesTable">
                             <thead class="table-light sticky-top">
                               <tr>
-                                <th>Date</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
                                 <th>Slots</th>
                                 <th class="text-end">Action</th>
                               </tr>
@@ -430,7 +434,7 @@ Day 2: Hanoi City Tour
                             <tbody id="tourDatesList">
                               <!-- Dates will be added here -->
                               <tr>
-                                <td colspan="3" class="text-center text-muted small py-3">No dates added yet</td>
+                                <td colspan="4" class="text-center text-muted small py-3">No dates added yet</td>
                               </tr>
                             </tbody>
                           </table>
@@ -481,6 +485,81 @@ Day 2: Hanoi City Tour
     <script src="/assets/js/sidebar-toggle.js"></script>
     <script src="/assets/js/tour.js"></script>
     <script>
+      // Generate Itinerary Days based on tour duration
+      function generateItineraryDays() {
+        const daysInput = document.getElementById('tourDays');
+        const days = parseInt(daysInput.value) || 0;
+        
+        if (days === 0) {
+          alert('Please enter the number of days in the "Duration & Pricing" tab first!');
+          // Switch to pricing tab
+          const pricingTab = new bootstrap.Tab(document.getElementById('pricing-tab'));
+          pricingTab.show();
+          daysInput.focus();
+          return;
+        }
+        
+        const container = document.getElementById('itineraryContainer');
+        let html = '';
+        
+        for (let i = 1; i <= days; i++) {
+          html += `
+            <div class="card mb-3">
+              <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                  <i class="bi bi-calendar-day"></i> Day ${i}
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Day ${i} Title *</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    id="day${i}Title" 
+                    placeholder="e.g., Arrival in Hanoi / City Tour / Departure"
+                    required
+                  >
+                  <small class="text-muted">Give this day a descriptive title</small>
+                </div>
+                <div class="mb-0">
+                  <label class="form-label fw-bold">Activities *</label>
+                  <textarea 
+                    class="form-control" 
+                    id="day${i}Activities" 
+                    rows="4" 
+                    placeholder="Enter activities for Day ${i}, one per line:
+- Pick up from hotel
+- Visit attraction
+- Lunch at restaurant
+- Return to hotel"
+                    required
+                  ></textarea>
+                  <small class="text-muted">Enter each activity on a new line (use - or • for bullet points)</small>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+        
+        container.innerHTML = html;
+        
+        // Show success message
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success alert-dismissible fade show';
+        alert.innerHTML = `
+          <i class="bi bi-check-circle"></i> 
+          <strong>Success!</strong> Generated ${days} day(s) for your itinerary. Fill in the title and activities for each day.
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        container.insertBefore(alert, container.firstChild);
+        
+        // Auto-dismiss after 3 seconds
+        setTimeout(() => {
+          alert.remove();
+        }, 3000);
+      }
+      
       // Initialize on page load
       document.addEventListener('DOMContentLoaded', () => {
         // Init happens in tour.js via controller instantiation

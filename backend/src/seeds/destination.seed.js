@@ -50,7 +50,7 @@ const destinations = [
     city: "Lào Cai",
     images: [
       "https://res.klook.com/image/upload/fl_lossy.progressive,q_60/Mobile/City/nab4excv9bkndhqnsyvl.jpg",
-      "https://www.vietnamairlines.com/~/media/SEO-images/2025%20SEO/Traffic%20TA/MB/sapa-vietnam/sapa-vietnam-thumb_1.jpg",
+      "https://www.vietnamairlines.com/~/media/SEO-images/2026%20SEO/Traffic%20TA/MB/sapa-vietnam/sapa-vietnam-thumb_1.jpg",
     ],
     status: DESTINATION_STATUS.ACTIVE,
   },

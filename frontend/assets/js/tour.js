@@ -476,10 +476,27 @@ class TourAdminController {
     document.getElementById('tourExcludes').value = (tour.excludes || []).join('\n');
     document.getElementById('tourRequirements').value = (tour.requirements || []).join('\n');
     
-    const itineraryText = tour.itinerary && tour.itinerary.length > 0 
-      ? (tour.itinerary[0].description || '') 
-      : '';
-    document.getElementById('tourItinerary').value = itineraryText;
+    // Populate itinerary - generate fields first, then fill them
+    if (tour.itinerary && tour.itinerary.length > 0) {
+      // Auto-generate itinerary fields
+      generateItineraryDays();
+      
+      // Wait a bit for DOM to update, then populate
+      setTimeout(() => {
+        tour.itinerary.forEach((day) => {
+          const titleInput = document.getElementById(`day${day.day}Title`);
+          const activitiesInput = document.getElementById(`day${day.day}Activities`);
+          
+          if (titleInput && activitiesInput) {
+            titleInput.value = day.title || '';
+            // Join activities with newline and add bullet points
+            activitiesInput.value = (day.activities || [])
+              .map(activity => `- ${activity}`)
+              .join('\n');
+          }
+        });
+      }, 100);
+    }
     
     if (tour.images && tour.images.length > 0) {
       const images = tour.images.map(url => {
@@ -535,9 +552,7 @@ class TourAdminController {
         .split('\n')
         .map(item => item.trim())
         .filter(item => item.length > 0),
-      itinerary: document.getElementById('tourItinerary').value.trim() 
-        ? [{ description: document.getElementById('tourItinerary').value.trim() }]
-        : [],
+      itinerary: this.collectItineraryData(),
       destinations: [],
       availableDates: this.tourAvailableDates || []
     };
@@ -562,6 +577,42 @@ class TourAdminController {
       console.error('Error saving tour:', error);
       AdminUtils.showToast('Failed to save tour', 'danger');
     }
+  }
+
+  // Collect itinerary data from dynamic fields
+  collectItineraryData() {
+    const days = parseInt(document.getElementById('tourDays').value) || 0;
+    const itinerary = [];
+    
+    for (let i = 1; i <= days; i++) {
+      const titleInput = document.getElementById(`day${i}Title`);
+      const activitiesInput = document.getElementById(`day${i}Activities`);
+      
+      if (titleInput && activitiesInput) {
+        const title = titleInput.value.trim();
+        const activitiesText = activitiesInput.value.trim();
+        
+        if (title && activitiesText) {
+          // Parse activities - split by newline and clean up
+          const activities = activitiesText
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .map(line => {
+              // Remove leading bullet points (-, •, *, etc.)
+              return line.replace(/^[-•*]\s*/, '');
+            });
+          
+          itinerary.push({
+            day: i,
+            title: title,
+            activities: activities
+          });
+        }
+      }
+    }
+    
+    return itinerary;
   }
 
   // Delete tour
@@ -758,10 +809,17 @@ async uploadTourImages() {
       return;
     }
 
+    // Calculate endDate based on tour duration
+    const days = parseInt(document.getElementById('tourDays').value) || 1;
+    const startDate = new Date(date);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + days - 1);
+
     this.tourAvailableDates.push({
       startDate: date,
-      spotsTotal: slots,
-      spotsAvailable: slots
+      endDate: endDate.toISOString().split('T')[0],
+      availableSlots: slots,
+      price: parseFloat(document.getElementById('priceAdult').value) || 0
     });
 
     this.tourAvailableDates.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
@@ -783,7 +841,7 @@ async uploadTourImages() {
     tbody.innerHTML = '';
 
     if (this.tourAvailableDates.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted small py-3">No dates added yet</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted small py-3">No dates added yet</td></tr>';
       return;
     }
 
@@ -791,7 +849,8 @@ async uploadTourImages() {
       const row = document.createElement('tr');
       row.innerHTML = `
         <td>${AdminUtils.formatDate(date.startDate)}</td>
-        <td>${date.spotsAvailable} / ${date.spotsTotal}</td>
+        <td>${AdminUtils.formatDate(date.endDate)}</td>
+        <td>${date.availableSlots} slots</td>
         <td class="text-end">
           <button type="button" class="btn btn-outline-danger btn-sm py-0" onclick="controller.removeTourDate(${index})">
             <i class="bi bi-x"></i>
