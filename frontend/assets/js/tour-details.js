@@ -26,7 +26,6 @@ async function loadTourDetails() {
 
   try {
     const response = await API.get(`/tours/slug/${tourSlug}`);
-    console.log("Tour response:", response);
 
     if (!response.success || !response.data) {
       showError();
@@ -98,10 +97,8 @@ function renderHeroSection(tour) {
   // Meta Info
   const meta = document.getElementById("tourMeta");
   const destination =
-    tour.destination?.name ||
-    tour.destinations?.[0]?.name ||
-    "Vietnam";
-  
+    tour.destination?.name || tour.destinations?.[0]?.name || "Vietnam";
+
   meta.innerHTML = `
     <div class="tour-hero-meta-item">
       <i class="bi bi-geo-alt-fill"></i>
@@ -216,9 +213,11 @@ function renderItinerary(tour) {
       (day) => `
     <div class="itinerary-day">
       <div class="itinerary-day-marker">D${day.day}</div>
-      <h4 class="itinerary-day-title">${day.title || ''}</h4>
+      <h4 class="itinerary-day-title">${day.title || ""}</h4>
       <ul class="itinerary-activities">
-        ${(day.activities || []).map((activity) => `<li>${activity}</li>`).join("")}
+        ${(day.activities || [])
+          .map((activity) => `<li>${activity}</li>`)
+          .join("")}
       </ul>
     </div>
   `
@@ -409,7 +408,14 @@ function handleBookNow() {
 
   // TODO: Implement booking functionality
   alert(
-    `Booking functionality coming soon!\n\nTour: ${currentTour.name}\nDate: ${formatDateRange(selectedDate.startDate, selectedDate.endDate)}\nPrice: ${formatPrice(selectedDate.price || currentTour.price?.adult || 0)}`
+    `Booking functionality coming soon!\n\nTour: ${
+      currentTour.name
+    }\nDate: ${formatDateRange(
+      selectedDate.startDate,
+      selectedDate.endDate
+    )}\nPrice: ${formatPrice(
+      selectedDate.price || currentTour.price?.adult || 0
+    )}`
   );
 }
 
@@ -433,7 +439,10 @@ function formatDateRange(startDate, endDate) {
     return start.toLocaleDateString("en-US", options);
   }
 
-  return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${end.toLocaleDateString("en-US", options)}`;
+  return `${start.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  })} - ${end.toLocaleDateString("en-US", options)}`;
 }
 
 function showError() {
@@ -454,8 +463,7 @@ async function checkAuth() {
     const authBtn = document.getElementById("authBtn");
 
     if (user) {
-      authBtn.innerHTML =
-        '<i class="bi bi-box-arrow-right"></i> Sign Out';
+      authBtn.innerHTML = '<i class="bi bi-box-arrow-right"></i> Sign Out';
       authBtn.onclick = () => {
         if (confirm("Bạn có chắc muốn đăng xuất?")) {
           AuthMiddleware.logout();

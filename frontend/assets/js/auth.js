@@ -10,6 +10,10 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
+// ===== DOM ELEMENTS =====
+const loginForm = document.getElementById("loginForm");
+const googleLoginBtn = document.getElementById("googleLoginBtn");
+const registerForm = document.getElementById("registerForm");
 
 // Google Provider
 const googleProvider = new firebase.auth.GoogleAuthProvider();
@@ -72,17 +76,14 @@ if (loginForm) {
         // ✅ Sửa: Lưu idToken từ response.data.idToken
         localStorage.setItem("idToken", response.data.idToken);
 
-        showAlert("Đăng nhập thành công! Đang chuyển hướng...", "success");
+        showAlert("Login successful! Redirecting...", "success");
 
         setTimeout(() => {
           window.location.href = "../index.html";
         }, 1500);
       }
     } catch (error) {
-      showAlert(
-        error.message || "Đăng nhập thất bại. Vui lòng thử lại.",
-        "danger"
-      );
+      showAlert(error.message || "Login failed. Please try again.", "danger");
     } finally {
       setButtonLoading(loginBtn, false);
     }
@@ -109,7 +110,7 @@ if (googleLoginBtn) {
         // ✅ Sửa: Lưu idToken từ response.data.idToken
         localStorage.setItem("idToken", response.data.idToken);
 
-        showAlert("Đăng nhập Google thành công!", "success");
+        showAlert("Google sign-in successful!", "success");
 
         setTimeout(() => {
           window.location.href = "../index.html";
@@ -117,7 +118,7 @@ if (googleLoginBtn) {
       }
     } catch (error) {
       console.error("Google login error:", error);
-      showAlert(error.message || "Đăng nhập Google thất bại.", "danger");
+      showAlert(error.message || "Google sign-in failed.", "danger");
     } finally {
       setButtonLoading(googleLoginBtn, false);
     }
@@ -129,15 +130,15 @@ const VALIDATION_RULES = {
   password: {
     regex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[@$!%*?&#]).{8,}$/,
     message:
-      "Mật khẩu phải ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
+      "Password must be at least 8 characters and include uppercase, lowercase, number, and special character",
   },
   phone: {
     regex: /^(0|\+84)[0-9]{9,10}$/,
-    message: "Số điện thoại không đúng định dạng Việt Nam",
+    message: "Invalid Vietnamese phone number format",
   },
   email: {
     regex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    message: "Email không hợp lệ",
+    message: "Invalid email address",
   },
 };
 
@@ -164,7 +165,6 @@ function displayFieldErrors(errors) {
 }
 
 // ===== REGISTER PAGE UPDATE =====
-const registerForm = document.getElementById("registerForm");
 
 if (registerForm) {
   // Clear lỗi khi user nhập vào input
@@ -194,7 +194,7 @@ if (registerForm) {
     if (fields.fullName.length < 2 || fields.fullName.length > 100) {
       clientErrors.push({
         field: "fullName",
-        message: "Họ tên phải từ 2-100 ký tự",
+        message: "Full name must be between 2 and 100 characters",
       });
     }
     if (!VALIDATION_RULES.email.regex.test(fields.email)) {
@@ -218,7 +218,7 @@ if (registerForm) {
     if (fields.password !== fields.confirmPassword) {
       clientErrors.push({
         field: "confirmPassword",
-        message: "Mật khẩu xác nhận không khớp",
+        message: "Passwords do not match",
       });
     }
 
@@ -234,7 +234,8 @@ if (registerForm) {
     try {
       const response = await API.register(fields);
       if (response.success) {
-        showAlert("Đăng ký thành công!", "success");
+        showAlert("Registration successful!", "success");
+
         setTimeout(() => (window.location.href = "/login"), 2000);
       }
     } catch (error) {
@@ -295,8 +296,7 @@ function checkAuthStatus() {
   // If on login/register page and already logged in, redirect to dashboard
   const currentPage = window.location.pathname;
   if (
-    (currentPage.includes("/login") ||
-      currentPage.includes("register.html")) &&
+    (currentPage.includes("/login") || currentPage.includes("register.html")) &&
     token
   ) {
     window.location.href = "index.html";

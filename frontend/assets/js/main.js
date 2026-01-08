@@ -7,8 +7,7 @@ async function checkAuth() {
     const authBtn = document.getElementById("authBtn");
 
     if (user) {
-      authBtn.innerHTML =
-        '<i class="bi bi-box-arrow-right"></i> Sign Out';
+      authBtn.innerHTML = '<i class="bi bi-box-arrow-right"></i> Sign Out';
       authBtn.onclick = () => {
         if (confirm("Bạn có chắc muốn đăng xuất?")) {
           AuthMiddleware.logout();
@@ -58,9 +57,7 @@ async function loadTours() {
             const now = new Date();
             const futureDates = tour.availableDates
               .filter((d) => new Date(d.startDate) > now)
-              .sort(
-                (a, b) => new Date(a.startDate) - new Date(b.startDate)
-              );
+              .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
             nextDate = futureDates[0];
           }
 
@@ -86,9 +83,9 @@ async function loadTours() {
                 <div class="card-body">
                   <div class="card-info">
                     <span class="info-item">
-                      <i class="bi bi-clock"></i> ${
-                        tour.duration?.days || 0
-                      }D${tour.duration?.nights || 0}N
+                      <i class="bi bi-clock"></i> ${tour.duration?.days || 0}D${
+            tour.duration?.nights || 0
+          }N
                     </span>
                     <span class="info-item">
                       <i class="bi bi-people"></i> ${tour.maxGroupSize || 0}
@@ -175,7 +172,6 @@ async function loadDestinations() {
 
   try {
     const response = await API.get("/destinations?limit=8&status=active");
-    console.log("Destinations response:", response);
 
     // Backend returns { success, message, data: [...], pagination }
     // data is the array of destinations
@@ -222,7 +218,7 @@ async function loadDestinations() {
 // ========================================
 function viewTourDetail(tour) {
   // Accept either tour object or slug string
-  const slug = typeof tour === 'string' ? tour : tour.slug;
+  const slug = typeof tour === "string" ? tour : tour.slug;
   window.location.href = `/tour/details/?slug=${slug}`;
 }
 
