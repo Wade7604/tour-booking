@@ -1,10 +1,15 @@
 # Tour Booking System
 
+[![Deployment](https://img.shields.io/badge/Deployment-Vercel-black?style=for-the-badge&logo=vercel)](https://tour-booking-bice.vercel.app/)
+
 A comprehensive tour booking and management system featuring a backend API built with Node.js/Express and a frontend interface for users and administrators.
 
 ## 🚀 Overview
 
+- **Live Demo:** [tour-booking-bice.vercel.app](https://tour-booking-bice.vercel.app/)
+
 This project provides a robust platform for booking tours, managing destinations, and interacting with a Gemini-powered chatbot for tour information. It includes features for user authentication, booking management, and a dedicated admin dashboard.
+
 
 ## 🔑 Admin Credentials
 
