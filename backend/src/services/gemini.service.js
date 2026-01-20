@@ -113,7 +113,7 @@ class GeminiService {
 ## Available Data:
 
 ### DESTINATIONS (${destinations.length} locations):
-${destinations.map(d => `- ${d.name} [slug: ${d.slug}] (${d.city}, ${d.country}): ${d.description?.substring(0, 100) || 'Attractive destination'}...`).join('\n')}
+${destinations.map(d => `- ${d.name} (${d.city}, ${d.country}) [slug: ${d.slug}]: ${d.description?.substring(0, 100) || 'Attractive destination'}...`).join('\n')}
 
 ### TOURS (${tours.length} tours):
 ${tours.map(t => {
@@ -128,28 +128,57 @@ ${tours.map(t => {
   + Description: ${t.description?.substring(0, 150) || ''}...`;
 }).join('\n\n')}
 
-## Response Guidelines:
-1. When users ask about tours or destinations, suggest suitable tours/destinations from the above list
-2. When suggesting tours, always include: tour name, duration, price, and highlights
-3. For adventure seekers, suggest tours with "moderate" or "challenging" difficulty
-4. For family/relaxed trips, suggest tours with "easy" difficulty
-5. IMPORTANT: When making suggestions, you MUST use the EXACT slug shown in [slug: xxx] - do NOT modify or generate your own slug
-6. Respond in English, be friendly and professional
-7. If no exact match is found, suggest similar tours and explain why
+## IMPORTANT Response Guidelines:
 
-## Tour Suggestion Format (JSON in response):
-When suggesting tours, include the following JSON block. IMPORTANT: Use the EXACT slug from the data above, do not create your own:
+### Text Response Format:
+1. Write in a friendly, conversational tone in English
+2. DO NOT use markdown headers (###) in your response
+3. DO NOT mention or show slug values to the user (slugs are internal technical details)
+4. DO NOT show [slug: xxx] annotations in your text
+5. Use simple formatting: bold for emphasis, bullet points for lists
+6. When suggesting tours, mention: name, duration, price, and why it's suitable
+7. When suggesting destinations, mention: name, location, and why it's attractive
+8. Be concise but informative - keep responses under 400 words
+9. If no exact match, suggest similar options and explain why
+
+### Suggestions Format (Separate JSON Block):
+⚠️ CRITICAL: You MUST use EXACT slugs from the data above. Your suggestions will be validated!
+
+AFTER your text response, include a JSON block with slugs for clickable cards.
+This block should be SEPARATE from your text response.
+
+**SLUG RULES - FOLLOW EXACTLY:**
+1. ONLY use slugs that appear in the [slug: xxx] annotations in the data above
+2. DO NOT create, modify, or guess slugs
+3. DO NOT use tour/destination names as slugs
+4. Copy the exact slug value character-by-character from the data
+5. Invalid slugs will be automatically rejected by the system
+
 \`\`\`suggestions
 {
-  "tours": [{"slug": "exact-slug-from-data", "name": "Tour name", "reason": "Why it's suitable"}],
-  "destinations": [{"slug": "exact-slug-from-data", "name": "Destination name", "reason": "Why it's suitable"}]
+  "tours": [{"slug": "exact-slug-from-data", "name": "Tour Name", "reason": "Brief reason"}],
+  "destinations": [{"slug": "exact-slug-from-data", "name": "Destination Name", "reason": "Brief reason"}]
 }
 \`\`\`
+
+### Example Response Structure:
+User asks: "I want a beach vacation"
+
+Your response should look like:
+"Vietnam has amazing beach destinations! I recommend Phu Quoc Island Paradise tour (4 days/3 nights, 5,500,000 VND per person). This tour takes you to pristine beaches with crystal clear waters, perfect for swimming and relaxation.
+
+For destinations, Phu Quoc is known as the Pearl Island with beautiful shores and serene atmosphere. Nha Trang offers vibrant coastal city life with excellent diving spots. Both are perfect for a beach getaway!"
+
+Then separately include the JSON block with EXACT slugs copied from the data list above.
+
+REMEMBER: 
+- Users should NEVER see slug values or [slug: xxx] in your text response!
+- In the JSON block, use ONLY the exact slugs shown in the data above!
 `
     };
   }
 
-  // Parse suggestions from AI response
+  // Parse suggestions from AI response and validate slugs
   _parseSuggestions(text) {
     const suggestions = {
       tours: [],
@@ -170,18 +199,38 @@ When suggesting tours, include the following JSON block. IMPORTANT: Use the EXAC
         
         const parsed = JSON.parse(jsonString);
         
-        // Validate and sanitize tours
+        // Get valid slugs from cache for validation
+        const validTourSlugs = new Set(this.toursCache?.map(t => t.slug) || []);
+        const validDestSlugs = new Set(this.destinationsCache?.map(d => d.slug) || []);
+        
+        // Validate and sanitize tours - ONLY include tours with valid slugs
         if (Array.isArray(parsed.tours)) {
-          suggestions.tours = parsed.tours.filter(tour => 
-            tour && typeof tour === 'object' && tour.slug && tour.name
-          );
+          suggestions.tours = parsed.tours.filter(tour => {
+            if (!tour || typeof tour !== 'object' || !tour.slug || !tour.name) {
+              return false;
+            }
+            // Check if slug exists in our actual data
+            if (!validTourSlugs.has(tour.slug)) {
+              console.warn(`Invalid tour slug from Gemini: "${tour.slug}" - skipping`);
+              return false;
+            }
+            return true;
+          });
         }
         
-        // Validate and sanitize destinations
+        // Validate and sanitize destinations - ONLY include destinations with valid slugs
         if (Array.isArray(parsed.destinations)) {
-          suggestions.destinations = parsed.destinations.filter(dest => 
-            dest && typeof dest === 'object' && dest.slug && dest.name
-          );
+          suggestions.destinations = parsed.destinations.filter(dest => {
+            if (!dest || typeof dest !== 'object' || !dest.slug || !dest.name) {
+              return false;
+            }
+            // Check if slug exists in our actual data
+            if (!validDestSlugs.has(dest.slug)) {
+              console.warn(`Invalid destination slug from Gemini: "${dest.slug}" - skipping`);
+              return false;
+            }
+            return true;
+          });
         }
       }
     } catch (error) {
@@ -196,15 +245,22 @@ When suggesting tours, include the following JSON block. IMPORTANT: Use the EXAC
   // Clean response text (remove JSON block for display)
   _cleanResponseText(text) {
     // Only remove complete suggestion blocks (those with closing ```)
-    const cleanedText = text.replace(/```suggestions\n?([\s\S]*?)\n?```/g, '').trim();
+    let cleanedText = text.replace(/```suggestions\n?([\s\S]*?)\n?```/g, '').trim();
     
     // If there's an incomplete block (starts with ```suggestions but no closing)
     // Remove it to avoid showing malformed JSON to user
     const incompleteMatch = cleanedText.match(/```suggestions\n?([\s\S]*?)$/);
     if (incompleteMatch) {
       console.warn('Removing incomplete suggestion block from response');
-      return cleanedText.replace(/```suggestions\n?[\s\S]*$/, '').trim();
+      cleanedText = cleanedText.replace(/```suggestions\n?[\s\S]*$/, '').trim();
     }
+    
+    // Remove markdown headers (###) from response text
+    // This removes lines that start with one or more # symbols
+    cleanedText = cleanedText.replace(/^#{1,6}\s+.+$/gm, '').trim();
+    
+    // Clean up multiple consecutive line breaks
+    cleanedText = cleanedText.replace(/\n{3,}/g, '\n\n').trim();
     
     return cleanedText;
   }
