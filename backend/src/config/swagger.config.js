@@ -1088,38 +1088,95 @@ const options = {
           summary: "Search destinations",
           description: "Search destinations using Elasticsearch",
           parameters: [
-            {
-              in: "query",
-              name: "q",
-              schema: { type: "string" },
-              description: "Search query",
-            },
-            {
-              in: "query",
-              name: "country",
-              schema: { type: "string" },
-              description: "Filter by country",
-            },
+            { in: "query", name: "q", schema: { type: "string" }, description: "Search query" },
+            { in: "query", name: "country", schema: { type: "string" }, description: "Filter by country" },
           ],
           responses: {
-            200: {
-              description: "Search results",
-              content: {
-                "application/json": {
-                  schema: {
-                    type: "object",
-                    properties: {
-                      success: { type: "boolean", example: true },
-                      data: {
-                        type: "array",
-                        items: { $ref: "#/components/schemas/Destination" },
-                      },
-                    },
-                  },
+            200: { description: "Search results" },
+          },
+        },
+      },
+      "/destinations/country/{country}": {
+        get: {
+          tags: ["Destinations"],
+          summary: "Get destinations by country",
+          parameters: [{ in: "path", name: "country", required: true, schema: { type: "string" } }],
+          responses: { 200: { description: "Destinations list" } },
+        },
+      },
+      "/destinations/statistics/overview": {
+        get: {
+          tags: ["Destinations"],
+          summary: "Get destination statistics",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "Statistics data" } },
+        },
+      },
+      "/destinations/{id}/status": {
+        patch: {
+          tags: ["Destinations"],
+          summary: "Update destination status",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["status"],
+                  properties: { status: { type: "string", enum: ["active", "inactive"] } },
                 },
               },
             },
           },
+          responses: { 200: { description: "Status updated" } },
+        },
+      },
+      "/destinations/{id}/images": {
+        post: {
+          tags: ["Destinations"],
+          summary: "Add images to destination",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["images"],
+                  properties: { images: { type: "array", items: { type: "string" } } },
+                },
+              },
+            },
+          },
+          responses: { 200: { description: "Images added" } },
+        },
+      },
+      "/destinations/elasticsearch/health": {
+        get: {
+          tags: ["Destinations"],
+          summary: "Elasticsearch health check",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "Healthy" } },
+        },
+      },
+      "/destinations/elasticsearch/reindex": {
+        post: {
+          tags: ["Destinations"],
+          summary: "Reindex all destinations",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "Reindexing started" } },
+        },
+      },
+      "/destinations/{id}/reindex": {
+        post: {
+          tags: ["Destinations"],
+          summary: "Reindex specific destination",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          responses: { 200: { description: "Reindexed" } },
         },
       },
       // ========== TOUR ENDPOINTS ==========
@@ -1331,12 +1388,7 @@ const options = {
           summary: "Get tour by slug",
           description: "Retrieve a tour by its URL slug",
           parameters: [
-            {
-              in: "path",
-              name: "slug",
-              required: true,
-              schema: { type: "string" },
-            },
+            { in: "path", name: "slug", required: true, schema: { type: "string" } },
           ],
           responses: {
             200: {
@@ -1355,6 +1407,130 @@ const options = {
             },
             404: { description: "Tour not found" },
           },
+        },
+      },
+      "/tours/search": {
+        get: {
+          tags: ["Tours"],
+          summary: "Search tours",
+          parameters: [
+            { in: "query", name: "q", schema: { type: "string" } },
+            { in: "query", name: "minPrice", schema: { type: "number" } },
+            { in: "query", name: "maxPrice", schema: { type: "number" } },
+          ],
+          responses: { 200: { description: "Search results" } },
+        },
+      },
+      "/tours/destination/{destinationId}": {
+        get: {
+          tags: ["Tours"],
+          summary: "Get tours by destination",
+          parameters: [{ in: "path", name: "destinationId", required: true, schema: { type: "string" } }],
+          responses: { 200: { description: "Tours list" } },
+        },
+      },
+      "/tours/statistics/overview": {
+        get: {
+          tags: ["Tours"],
+          summary: "Get tour statistics",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "Statistics data" } },
+        },
+      },
+      "/tours/{id}/status": {
+        patch: {
+          tags: ["Tours"],
+          summary: "Update tour status",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["status"],
+                  properties: { status: { type: "string", enum: ["active", "inactive", "draft"] } },
+                },
+              },
+            },
+          },
+          responses: { 200: { description: "Status updated" } },
+        },
+      },
+      "/tours/{id}/images": {
+        post: {
+          tags: ["Tours"],
+          summary: "Add images to tour",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["images"],
+                  properties: { images: { type: "array", items: { type: "string" } } },
+                },
+              },
+            },
+          },
+          responses: { 200: { description: "Images added" } },
+        },
+      },
+      "/tours/{id}/cover-image": {
+        patch: {
+          tags: ["Tours"],
+          summary: "Set tour cover image",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["imageUrl"],
+                  properties: { imageUrl: { type: "string" } },
+                },
+              },
+            },
+          },
+          responses: { 200: { description: "Cover image set" } },
+        },
+      },
+      "/tours/{id}/dates": {
+        post: {
+          tags: ["Tours"],
+          summary: "Add available date",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object" } } } },
+          responses: { 201: { description: "Date added" } },
+        },
+      },
+      "/tours/{id}/dates/{dateIndex}": {
+        put: {
+          tags: ["Tours"],
+          summary: "Update available date",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { in: "path", name: "id", required: true, schema: { type: "string" } },
+            { in: "path", name: "dateIndex", required: true, schema: { type: "integer" } },
+          ],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object" } } } },
+          responses: { 200: { description: "Date updated" } },
+        },
+        delete: {
+          tags: ["Tours"],
+          summary: "Remove available date",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { in: "path", name: "id", required: true, schema: { type: "string" } },
+            { in: "path", name: "dateIndex", required: true, schema: { type: "integer" } },
+          ],
+          responses: { 200: { description: "Date removed" } },
         },
       },
       // ========== BOOKING ENDPOINTS ==========
@@ -1604,21 +1780,9 @@ const options = {
           description: "Get all bookings (requires booking:view permission)",
           security: [{ bearerAuth: [] }],
           parameters: [
-            {
-              in: "query",
-              name: "page",
-              schema: { type: "integer" },
-            },
-            {
-              in: "query",
-              name: "limit",
-              schema: { type: "integer" },
-            },
-            {
-              in: "query",
-              name: "status",
-              schema: { type: "string" },
-            },
+            { in: "query", name: "page", schema: { type: "integer", default: 1 } },
+            { in: "query", name: "limit", schema: { type: "integer", default: 10 } },
+            { in: "query", name: "status", schema: { type: "string" } },
           ],
           responses: {
             200: {
@@ -1632,10 +1796,7 @@ const options = {
                       data: {
                         type: "object",
                         properties: {
-                          bookings: {
-                            type: "array",
-                            items: { $ref: "#/components/schemas/Booking" },
-                          },
+                          bookings: { type: "array", items: { $ref: "#/components/schemas/Booking" } },
                           pagination: { type: "object" },
                         },
                       },
@@ -1644,9 +1805,62 @@ const options = {
                 },
               },
             },
-            401: { description: "Unauthorized" },
-            403: { description: "Forbidden" },
           },
+        },
+      },
+      "/bookings/admin/statistics": {
+        get: {
+          tags: ["Bookings"],
+          summary: "Get booking statistics (Admin)",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "Statistics data" } },
+        },
+      },
+      "/bookings/admin/tour/{tourId}": {
+        get: {
+          tags: ["Bookings"],
+          summary: "Get bookings by tour (Admin)",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "tourId", required: true, schema: { type: "string" } }],
+          responses: { 200: { description: "Bookings list" } },
+        },
+      },
+      "/bookings/admin/{id}": {
+        get: {
+          tags: ["Bookings"],
+          summary: "Get booking by ID (Admin)",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          responses: { 200: { description: "Booking data" } },
+        },
+      },
+      "/bookings/code/{code}": {
+        get: {
+          tags: ["Bookings"],
+          summary: "Get booking by code",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "code", required: true, schema: { type: "string" } }],
+          responses: { 200: { description: "Booking data" } },
+        },
+      },
+      "/bookings/admin/{id}/payment": {
+        post: {
+          tags: ["Bookings"],
+          summary: "Add payment (Admin)",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object" } } } },
+          responses: { 200: { description: "Payment added" } },
+        },
+      },
+      "/bookings/{id}/payment": {
+        post: {
+          tags: ["Bookings"],
+          summary: "Add payment (User)",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object" } } } },
+          responses: { 200: { description: "Payment added" } },
         },
       },
       "/bookings/admin/{id}/status": {
@@ -1693,20 +1907,12 @@ const options = {
       "/users": {
         get: {
           tags: ["Users"],
-          summary: "Get all users",
-          description: "Get all users (requires user:view permission)",
+          summary: "Get all users (Admin)",
+          description: "Get all users with pagination and search (requires user:view permission)",
           security: [{ bearerAuth: [] }],
           parameters: [
-            {
-              in: "query",
-              name: "page",
-              schema: { type: "integer", default: 1 },
-            },
-            {
-              in: "query",
-              name: "limit",
-              schema: { type: "integer", default: 10 },
-            },
+            { in: "query", name: "page", schema: { type: "integer", default: 1 } },
+            { in: "query", name: "limit", schema: { type: "integer", default: 10 } },
           ],
           responses: {
             200: {
@@ -1720,10 +1926,7 @@ const options = {
                       data: {
                         type: "object",
                         properties: {
-                          users: {
-                            type: "array",
-                            items: { $ref: "#/components/schemas/User" },
-                          },
+                          users: { type: "array", items: { $ref: "#/components/schemas/User" } },
                           pagination: { type: "object" },
                         },
                       },
@@ -1732,13 +1935,11 @@ const options = {
                 },
               },
             },
-            401: { description: "Unauthorized" },
-            403: { description: "Forbidden" },
           },
         },
         post: {
           tags: ["Users"],
-          summary: "Create user",
+          summary: "Create user (Admin)",
           description: "Create a new user (requires user:create permission)",
           security: [{ bearerAuth: [] }],
           requestBody: {
@@ -1760,9 +1961,101 @@ const options = {
           },
           responses: {
             201: { description: "User created successfully" },
-            401: { description: "Unauthorized" },
-            403: { description: "Forbidden" },
           },
+        },
+      },
+      "/users/search": {
+        get: {
+          tags: ["Users"],
+          summary: "Search users",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "query", name: "q", schema: { type: "string" } }],
+          responses: {
+            200: { description: "Search results" },
+          },
+        },
+      },
+      "/users/role/{role}": {
+        get: {
+          tags: ["Users"],
+          summary: "Get users by role",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "role", required: true, schema: { type: "string" } }],
+          responses: {
+            200: { description: "Users list" },
+          },
+        },
+      },
+      "/users/statistics": {
+        get: {
+          tags: ["Users"],
+          summary: "Get user statistics",
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: "Statistics data" },
+          },
+        },
+      },
+      "/users/{id}/status": {
+        patch: {
+          tags: ["Users"],
+          summary: "Update user status",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["status"],
+                  properties: { status: { type: "string", enum: ["active", "inactive", "banned"] } },
+                },
+              },
+            },
+          },
+          responses: {
+            200: { description: "Status updated" },
+          },
+        },
+      },
+      "/users/{id}/role": {
+        patch: {
+          tags: ["Users"],
+          summary: "Update user role",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["role"],
+                  properties: { role: { type: "string" } },
+                },
+              },
+            },
+          },
+          responses: {
+            200: { description: "Role updated" },
+          },
+        },
+      },
+      "/users/elasticsearch/health": {
+        get: {
+          tags: ["Users"],
+          summary: "Elasticsearch health check",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "Healthy" } },
+        },
+      },
+      "/users/elasticsearch/reindex": {
+        post: {
+          tags: ["Users"],
+          summary: "Reindex all users",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "Reindexing started" } },
         },
       },
       "/users/me": {
@@ -2025,6 +2318,14 @@ const options = {
           },
         },
       },
+      "/chatbot/clear-cache": {
+        post: {
+          tags: ["Chatbot"],
+          summary: "Clear chatbot cache (Admin)",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "Cache cleared" } },
+        },
+      },
       // ========== UPLOAD ENDPOINTS ==========
       "/uploads/avatar": {
         post: {
@@ -2070,6 +2371,19 @@ const options = {
             },
             401: { description: "Unauthorized" },
           },
+        },
+      },
+      "/uploads/avatar/{userId}": {
+        post: {
+          tags: ["Uploads"],
+          summary: "Upload avatar for specific user (Admin)",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "userId", required: true, schema: { type: "string" } }],
+          requestBody: {
+            required: true,
+            content: { "multipart/form-data": { schema: { type: "object", properties: { avatar: { type: "string", format: "binary" } } } } },
+          },
+          responses: { 200: { description: "Avatar uploaded" } },
         },
       },
       "/uploads/destinations/{destinationId}/images": {
@@ -2133,6 +2447,31 @@ const options = {
             403: { description: "Forbidden" },
           },
         },
+        delete: {
+          tags: ["Uploads"],
+          summary: "Delete multiple destination images",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { in: "path", name: "destinationId", required: true, schema: { type: "string" } },
+          ],
+          requestBody: {
+            required: true,
+            content: { "application/json": { schema: { type: "object", properties: { imageUrls: { type: "array", items: { type: "string" } } } } } },
+          },
+          responses: { 200: { description: "Images deleted" } },
+        },
+      },
+      "/uploads/destinations/{destinationId}/image": {
+        delete: {
+          tags: ["Uploads"],
+          summary: "Delete single destination image",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { in: "path", name: "destinationId", required: true, schema: { type: "string" } },
+            { in: "query", name: "imageUrl", required: true, schema: { type: "string" } },
+          ],
+          responses: { 200: { description: "Image deleted" } },
+        },
       },
       "/uploads/tours/{tourId}/images": {
         post: {
@@ -2172,6 +2511,288 @@ const options = {
             200: { description: "Images uploaded successfully" },
             401: { description: "Unauthorized" },
             403: { description: "Forbidden" },
+          },
+        },
+      },
+      "/uploads/tours/{tourId}/image": {
+        delete: {
+          tags: ["Uploads"],
+          summary: "Delete single tour image",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { in: "path", name: "tourId", required: true, schema: { type: "string" } },
+            { in: "query", name: "imageUrl", required: true, schema: { type: "string" } },
+          ],
+          responses: { 200: { description: "Image deleted" } },
+        },
+      },
+      "/uploads/optimize": {
+        get: {
+          tags: ["Uploads"],
+          summary: "Get optimized image URL",
+          parameters: [
+            { in: "query", name: "url", required: true, schema: { type: "string" } },
+            { in: "query", name: "width", schema: { type: "integer" } },
+            { in: "query", name: "quality", schema: { type: "integer" } },
+          ],
+          responses: { 200: { description: "Optimized URL" } },
+        },
+      },
+      "/uploads/thumbnail": {
+        get: {
+          tags: ["Uploads"],
+          summary: "Get thumbnail URL",
+          parameters: [
+            { in: "query", name: "url", required: true, schema: { type: "string" } },
+          ],
+          responses: { 200: { description: "Thumbnail URL" } },
+        },
+      },
+      // ========== PERMISSION ENDPOINTS ==========
+      "/permissions": {
+        get: {
+          tags: ["Permissions"],
+          summary: "Get all permissions",
+          description: "Retrieve a list of all permissions (Admin only)",
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: "Permissions retrieved successfully",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      success: { type: "boolean", example: true },
+                      data: {
+                        type: "array",
+                        items: { $ref: "#/components/schemas/Permission" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            401: { description: "Unauthorized" },
+            403: { description: "Forbidden" },
+          },
+        },
+        post: {
+          tags: ["Permissions"],
+          summary: "Create permission",
+          description: "Create a new permission (Admin only)",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["name", "resource", "action"],
+                  properties: {
+                    name: { type: "string", example: "user:view" },
+                    resource: { type: "string", example: "user" },
+                    action: { type: "string", example: "view" },
+                    description: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            201: { description: "Permission created successfully" },
+            401: { description: "Unauthorized" },
+            403: { description: "Forbidden" },
+          },
+        },
+      },
+      "/permissions/{id}": {
+        get: {
+          tags: ["Permissions"],
+          summary: "Get permission by ID",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          responses: {
+            200: {
+              description: "Permission found",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Permission" },
+                },
+              },
+            },
+            404: { description: "Not found" },
+          },
+        },
+        put: {
+          tags: ["Permissions"],
+          summary: "Update permission",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Permission" },
+              },
+            },
+          },
+          responses: {
+            200: { description: "Updated successfully" },
+          },
+        },
+        delete: {
+          tags: ["Permissions"],
+          summary: "Delete permission",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          responses: {
+            204: { description: "Deleted successfully" },
+          },
+        },
+      },
+      "/permissions/resource/{resource}": {
+        get: {
+          tags: ["Permissions"],
+          summary: "Get permissions by resource",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "resource", required: true, schema: { type: "string" } }],
+          responses: {
+            200: {
+              description: "Permissions retrieved",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "array",
+                    items: { $ref: "#/components/schemas/Permission" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      // ========== ROLE ENDPOINTS ==========
+      "/roles": {
+        get: {
+          tags: ["Roles"],
+          summary: "Get all roles",
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: "Roles retrieved",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "array",
+                    items: { $ref: "#/components/schemas/Role" },
+                  },
+                },
+              },
+            },
+          },
+        },
+        post: {
+          tags: ["Roles"],
+          summary: "Create role",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["name"],
+                  properties: {
+                    name: { type: "string" },
+                    description: { type: "string" },
+                    permissions: { type: "array", items: { type: "string" } },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            201: { description: "Created" },
+          },
+        },
+      },
+      "/roles/{id}": {
+        get: {
+          tags: ["Roles"],
+          summary: "Get role by ID",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          responses: {
+            200: {
+              description: "Role found",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Role" },
+                },
+              },
+            },
+          },
+        },
+        put: {
+          tags: ["Roles"],
+          summary: "Update role",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Role" },
+              },
+            },
+          },
+          responses: {
+            200: { description: "Updated" },
+          },
+        },
+        delete: {
+          tags: ["Roles"],
+          summary: "Delete role",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          responses: {
+            204: { description: "Deleted" },
+          },
+        },
+      },
+      "/roles/{id}/permissions": {
+        post: {
+          tags: ["Roles"],
+          summary: "Add permission to role",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["permission"],
+                  properties: { permission: { type: "string" } },
+                },
+              },
+            },
+          },
+          responses: {
+            200: { description: "Permission added" },
+          },
+        },
+        delete: {
+          tags: ["Roles"],
+          summary: "Remove permission from role",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { in: "path", name: "id", required: true, schema: { type: "string" } },
+            { in: "query", name: "permission", required: true, schema: { type: "string" } },
+          ],
+          responses: {
+            200: { description: "Permission removed" },
           },
         },
       },
